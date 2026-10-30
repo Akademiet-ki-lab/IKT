@@ -70,10 +70,10 @@
   <div id="app" class="shell">
     <!-- ===== Sidemeny (desktop/nettbrett) ===== -->
     <aside class="sidebar" aria-label="Navigasjon">
-      <div class="brand">
+      <a class="brand" href="#dashboard" aria-label="IKT-pulten – Oversikt">
         <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
         <span class="brand-text"><strong>IKT-pulten</strong><small>Elevdrevet support</small></span>
-      </div>
+      </a>
       <button type="button" class="btn btn-primary btn-block side-new" data-view="new"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Ny sak<kbd>N</kbd></button>
       <nav class="side-nav" aria-label="Hovedmeny">
         <button type="button" class="side-link active" data-view="dashboard" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg><span>Oversikt</span></button>
@@ -95,7 +95,7 @@
     <div class="main">
       <!-- Toppfelt kun på mobil -->
       <header class="topbar">
-        <div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span><span class="brand-text"><strong>IKT-pulten</strong></span></div>
+        <a class="brand" href="#dashboard" aria-label="IKT-pulten – Oversikt"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span><span class="brand-text"><strong>IKT-pulten</strong></span></a>
         <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-open data-cloud-state="off" aria-label="Lagring og skysynk" aria-haspopup="dialog"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
       </header>
 
