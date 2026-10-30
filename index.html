@@ -14,8 +14,8 @@
   <meta name="description" content="Saksnotater og oversikt for elevteknikernes IKT-support.">
   <title>Helpnotes · Oversikt</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23273247'/%3E%3Cpath d='M20 44l16-16m-2-10a10 10 0 0 0 11 14l-3 3 6 6-5 5-6-6-3 3A10 10 0 0 1 20 22l6 6 5-5z' fill='none' stroke='%239db7ff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="preload" href="fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/playfair-display-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -56,6 +56,7 @@
       <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.8L3 8M3 3v5h5"/></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+      <symbol id="i-chevrons-right" viewBox="0 0 24 24"><path d="M6 17l5-5-5-5M13 17l5-5-5-5"/></symbol>
       <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
       <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
       <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></symbol>
@@ -67,84 +68,122 @@
   </svg>
 
   <div id="app" class="shell">
-    <!-- ===== Sidemeny (desktop/nettbrett) ===== -->
-    <aside class="sidebar" aria-label="Navigasjon">
-      <a class="brand" href="#dashboard" aria-label="Helpnotes – Oversikt">
-        <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
-        <span class="brand-text"><strong>Helpnotes</strong><small>Elevdrevet support</small></span>
-      </a>
-      <button type="button" class="btn btn-primary btn-block side-new" data-view="new"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Ny sak<kbd>N</kbd></button>
-      <nav class="side-nav" aria-label="Hovedmeny">
-        <button type="button" class="side-link active" data-view="dashboard" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg><span>Oversikt</span></button>
-        <button type="button" class="side-link" data-view="log"><svg class="icon" aria-hidden="true"><use href="#i-inbox"/></svg><span>Sakslogg</span><span id="nav-count" class="count"></span></button>
-      </nav>
-      <div class="side-section">
-        <h3>Teknikere</h3>
-        <div id="side-technicians" class="side-techs"></div>
+    <!-- ===== Sidemeny (kan skjules) ===== -->
+    <nav id="sidebar" class="sidebar" aria-label="Hovedmeny">
+      <div class="sb-title">
+        <a class="sb-brand" href="#dashboard" aria-label="Helpnotes – Oversikt">
+          <span class="sb-logo"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+          <span class="sb-label sb-title-text"><strong>Helpnotes</strong><small>Elevdrevet support</small></span>
+        </a>
       </div>
-      <div class="side-foot">
-        <button type="button" class="cloud-chip" data-cloud-open data-cloud-state="off" aria-haspopup="dialog">
-          <span class="cloud-dot" aria-hidden="true"></span>
-          <span class="cloud-text"><strong>Lagring</strong><small data-cloud-label>Kontrollerer …</small></span>
-          <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
-        </button>
+      <div class="sb-group">
+        <button type="button" class="sb-option active" data-view="dashboard" aria-current="page" title="Oversikt"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg></span><span class="sb-label">Oversikt</span></button>
+        <button type="button" class="sb-option" data-view="log" title="Sakslogg"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox"/></svg></span><span class="sb-label">Sakslogg</span><span id="nav-count" class="sb-badge"></span></button>
+        <button type="button" class="sb-option" data-view="new" title="Ny sak"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span><span class="sb-label">Ny sak</span><kbd class="sb-label">N</kbd></button>
       </div>
-    </aside>
+      <div class="sb-group sb-account">
+        <div class="sb-heading sb-label">Konto</div>
+        <button type="button" class="sb-option" data-cloud-open data-cloud-state="off" aria-haspopup="dialog" title="Lagring og skysynk"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-cloud"/></svg></span><span class="sb-label">Lagring</span><span class="sb-status sb-label"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></span></button>
+      </div>
+      <button type="button" id="sidebar-toggle" class="sb-toggle" aria-expanded="true" aria-controls="sidebar" title="Skjul/vis sidemeny"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-chevrons-right"/></svg></span><span class="sb-label">Skjul</span></button>
+    </nav>
 
     <div class="main">
-      <!-- Toppfelt kun på mobil -->
-      <header class="topbar">
-        <a class="brand" href="#dashboard" aria-label="Helpnotes – Oversikt"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span><span class="brand-text"><strong>Helpnotes</strong></span></a>
-        <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-open data-cloud-state="off" aria-label="Lagring og skysynk" aria-haspopup="dialog"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
+      <!-- ===== Toppfelt (mobil) ===== -->
+      <header class="navbar">
+        <div class="navbar-inner">
+          <a class="brand" href="#dashboard" aria-label="Helpnotes – Oversikt">
+            <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+            <span class="brand-text"><strong>Helpnotes</strong></span>
+          </a>
+          <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-open data-cloud-state="off" aria-label="Lagring og skysynk" aria-haspopup="dialog"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
+        </div>
       </header>
 
       <main id="content" tabindex="-1">
         <!-- ===== Oversikt ===== -->
         <section id="view-dashboard" class="view">
-          <div class="page-head hero">
-            <div class="hero-text">
-              <div id="greeting-eyebrow" class="eyebrow">Oversikt</div>
-              <h1 id="greeting-title" data-view-heading tabindex="-1">Oversikt</h1>
-              <p id="hero-lede">Her er status for supportsakene.</p>
+          <div class="hero">
+            <div id="greeting-eyebrow" class="hero-badge">Oversikt</div>
+            <h1 id="greeting-title" data-view-heading tabindex="-1">Oversikt</h1>
+            <p id="hero-lede">Her er status for supportsakene.</p>
+            <div class="hero-meter" role="img" aria-label="Andel løste saker">
+              <div class="hero-meter-track"><div id="hero-meter-fill" class="hero-meter-fill" style="width:0"></div></div>
+              <span id="hero-meter-text">0 % løst</span>
             </div>
-            <button type="button" class="btn btn-primary" data-view="new"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Ny sak</button>
+
+            <div class="hero-panel">
+              <div class="hero-panel-head"><div><h2>Logg en sak</h2><p>Velg status, så fyller vi den ut for deg.</p></div><span class="hero-panel-key">Hurtigtast <kbd>N</kbd></span></div>
+              <div class="status-cards" role="group" aria-label="Logg en sak med valgt status">
+                <button type="button" class="status-card" data-tone="good" data-new-status="Løst"><span class="status-card-icon"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg></span><strong>Løst</strong><span class="status-card-count" id="card-count-lost">0 saker</span><span class="status-card-go">Logg løst sak<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></button>
+                <button type="button" class="status-card" data-tone="wait" data-new-status="Venter på deler/bruker"><span class="status-card-icon"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span><strong>Venter</strong><span class="status-card-count" id="card-count-wait">0 saker</span><span class="status-card-go">Logg ventende sak<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></button>
+                <button type="button" class="status-card" data-tone="alert" data-new-status="Eskalert til IKT-ansvarlig"><span class="status-card-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert-triangle"/></svg></span><strong>Eskalert</strong><span class="status-card-count" id="card-count-esc">0 saker</span><span class="status-card-go">Logg eskalert sak<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></button>
+              </div>
+
+              <div class="hero-team">
+                <span class="hero-team-label">Teknikerne i teamet</span>
+                <div id="side-technicians" class="side-techs"></div>
+              </div>
+            </div>
           </div>
 
-          <section class="ledger" aria-labelledby="attention-title">
-            <header class="ledger-head"><span class="ledger-no">01</span><h2 id="attention-title">Neste på listen</h2><button type="button" class="link-btn" data-view="log">Se alle saker<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button></header>
-            <div id="attention-list" class="attention-list"></div>
-          </section>
+          <div class="bento">
+            <!-- Neste på listen -->
+            <section class="panel b-attention" aria-labelledby="attention-title">
+              <header class="panel-head">
+                <span class="panel-icon" data-tone="blue"><svg class="icon" aria-hidden="true"><use href="#i-list"/></svg></span>
+                <div class="panel-titles"><h2 id="attention-title">Neste på listen</h2><p>Åpne saker, viktigst først</p></div>
+                <button type="button" class="link-btn" data-view="log">Se alle<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+              </header>
+              <div id="attention-list" class="attention-list"></div>
+            </section>
 
-          <section class="ledger" aria-labelledby="numbers-title">
-            <header class="ledger-head"><span class="ledger-no">02</span><h2 id="numbers-title">Status i tall</h2></header>
-            <div class="stat-grid">
-              <article class="stat"><span class="stat-label">Totalt</span><strong id="stat-total">0</strong><span class="stat-note">saker i loggen</span></article>
-              <article class="stat stat-wait"><span class="stat-label">Venter</span><strong id="stat-venter">0</strong><span class="stat-note">krever oppfølging</span></article>
-              <article class="stat stat-alert"><span class="stat-label">Eskalert</span><strong id="stat-eskalert">0</strong><span class="stat-note">hos IKT-ansvarlig</span></article>
-              <article class="stat stat-good"><span class="stat-label">Løst</span><strong id="stat-lost">0</strong><span class="stat-note" id="solved-share">0% av sakene</span></article>
-            </div>
-          </section>
-
-          <section class="ledger" aria-labelledby="activity-title">
-            <header class="ledger-head"><span class="ledger-no">03</span><h2 id="activity-title">Aktivitet</h2></header>
-            <div class="dash-grid">
-              <div class="panel chart-card">
-                <div class="card-head"><div><h3>Innmeldte saker</h3><p class="muted">De siste 7 dagene</p></div><span id="chart-week-total" class="pill-soft">0 saker</span></div>
-                <div id="ticket-chart" class="chart" role="img" aria-label="Saker registrert per dag de siste sju dagene"></div>
+            <!-- Status i tall -->
+            <section class="panel b-numbers" aria-labelledby="numbers-title">
+              <header class="panel-head">
+                <span class="panel-icon" data-tone="blue"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span>
+                <div class="panel-titles"><h2 id="numbers-title">Status i tall</h2><p>Alle saker i loggen</p></div>
+              </header>
+              <div class="stat-tiles">
+                <article class="stat-tile" data-tone="blue"><span class="stat-tile-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox"/></svg></span><strong id="stat-total">0</strong><span class="stat-tile-label">Totalt</span><small>saker i loggen</small></article>
+                <article class="stat-tile" data-tone="wait"><span class="stat-tile-icon"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span><strong id="stat-venter">0</strong><span class="stat-tile-label">Venter</span><small>krever oppfølging</small></article>
+                <article class="stat-tile" data-tone="alert"><span class="stat-tile-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert-triangle"/></svg></span><strong id="stat-eskalert">0</strong><span class="stat-tile-label">Eskalert</span><small>hos IKT-ansvarlig</small></article>
+                <article class="stat-tile" data-tone="good"><span class="stat-tile-icon"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg></span><strong id="stat-lost">0</strong><span class="stat-tile-label">Løst</span><small id="solved-share">0% av sakene</small></article>
               </div>
-              <div class="panel goal-card">
-                <div class="card-head"><div><h3>Løsningsgrad</h3><p class="muted">Mål: 90 % løst</p></div></div>
-                <div class="goal-number"><strong id="resolution-rate">0%</strong></div>
-                <div class="goal-track"><div id="resolution-progress" class="goal-fill"></div><span class="goal-target" title="Mål: 90 %"></span></div>
-                <div id="category-bars" class="category-bars"></div>
-              </div>
-            </div>
-          </section>
+            </section>
 
-          <section class="ledger" aria-labelledby="team-title">
-            <header class="ledger-head"><span class="ledger-no">04</span><h2 id="team-title">Teknikerne</h2></header>
-            <div id="leaderboard" class="leaderboard"></div>
-          </section>
+            <!-- Aktivitet -->
+            <section class="panel b-activity" aria-labelledby="activity-title">
+              <header class="panel-head">
+                <span class="panel-icon" data-tone="blue"><svg class="icon" aria-hidden="true"><use href="#i-gauge"/></svg></span>
+                <div class="panel-titles"><h2 id="activity-title">Aktivitet</h2><p>Innmeldte saker de siste 7 dagene</p></div>
+                <span id="chart-week-total" class="pill-soft">0 saker</span>
+              </header>
+              <div id="ticket-chart" class="bars" role="img" aria-label="Saker registrert per dag de siste sju dagene"></div>
+            </section>
+
+            <!-- Løsningsgrad -->
+            <section class="panel b-goal" aria-labelledby="goal-title">
+              <header class="panel-head">
+                <span class="panel-icon" data-tone="good"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg></span>
+                <div class="panel-titles"><h2 id="goal-title">Løsningsgrad</h2><p>Mål: 90 % løst</p></div>
+              </header>
+              <div class="donut-wrap">
+                <div id="resolution-progress" class="donut" style="--p:0" role="img" aria-label="Løsningsgrad"><div class="donut-center"><strong id="resolution-rate">0%</strong><span id="goal-gap">Mål 90 %</span></div></div>
+              </div>
+              <div class="goal-sub">Saker per kategori</div>
+              <div id="category-bars" class="category-bars"></div>
+            </section>
+
+            <!-- Teknikerne -->
+            <section class="panel b-team" aria-labelledby="team-title">
+              <header class="panel-head">
+                <span class="panel-icon" data-tone="blue"><svg class="icon" aria-hidden="true"><use href="#i-layers"/></svg></span>
+                <div class="panel-titles"><h2 id="team-title">Teknikerne</h2><p>Registrerte saker per tekniker</p></div>
+              </header>
+              <div id="leaderboard" class="leaderboard"></div>
+            </section>
+          </div>
 
           <div class="data-bar">
             <div class="data-bar-text"><strong>Data og sikkerhetskopi</strong><span id="backup-status" class="backup-status"></span></div>
@@ -160,79 +199,64 @@
         <!-- ===== Ny sak / rediger ===== -->
         <section id="view-new" class="view hidden">
           <div class="page-head">
-            <div><div class="eyebrow" id="form-eyebrow">Ny sak</div><h1 id="form-heading" data-view-heading tabindex="-1">Logg en sak</h1><p id="form-lead">Fyll ut det viktigste, resten er valgfritt. Utkastet lagres automatisk.</p></div>
+            <div><div class="eyebrow" id="form-eyebrow">Ny sak</div><h1 id="form-heading" data-view-heading tabindex="-1">Logg en sak</h1><p id="form-lead">Svar på fire små spørsmål. Det tar under ett minutt.</p></div>
             <button type="button" class="btn btn-ghost" data-view="log"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Til saksloggen</button>
           </div>
 
           <form id="case-form" class="composer" novalidate autocomplete="off">
-            <div class="composer-grid">
-              <div class="composer-main">
-                <section class="card composer-card" aria-label="Hurtigmaler">
-                  <div class="template-strip">
-                    <span class="strip-label"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>Hurtigmal</span>
-                    <div class="chip-row">
-                      <button type="button" class="chip-btn" data-template="feide"><svg class="icon" aria-hidden="true"><use href="#i-key"/></svg>Glemt Feide-passord</button>
-                      <button type="button" class="chip-btn" data-template="disk"><svg class="icon" aria-hidden="true"><use href="#i-hard-drive"/></svg>Full disklagring</button>
-                      <button type="button" class="chip-btn" data-template="wifi"><svg class="icon" aria-hidden="true"><use href="#i-wifi"/></svg>Wi-Fi-feil</button>
-                      <button type="button" class="chip-btn" data-template="print"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg>Print-kø</button>
-                      <button type="button" class="chip-btn" data-template="slow"><svg class="icon" aria-hidden="true"><use href="#i-gauge"/></svg>Treg PC / restart</button>
-                    </div>
+            <div class="composer-main">
+              <section class="card composer-card quick-templates" aria-label="Hurtigmaler">
+                <div class="template-strip">
+                  <span class="strip-label"><svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>Trykk for å fylle ut raskt</span>
+                  <div class="chip-row">
+                    <button type="button" class="chip-btn" data-template="feide"><svg class="icon" aria-hidden="true"><use href="#i-key"/></svg>Glemt Feide-passord</button>
+                    <button type="button" class="chip-btn" data-template="disk"><svg class="icon" aria-hidden="true"><use href="#i-hard-drive"/></svg>Full disklagring</button>
+                    <button type="button" class="chip-btn" data-template="wifi"><svg class="icon" aria-hidden="true"><use href="#i-wifi"/></svg>Wi-Fi-feil</button>
+                    <button type="button" class="chip-btn" data-template="print"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg>Skriveren virker ikke</button>
+                    <button type="button" class="chip-btn" data-template="slow"><svg class="icon" aria-hidden="true"><use href="#i-gauge"/></svg>Treg PC / restart</button>
                   </div>
-                </section>
+                </div>
+              </section>
 
-                <section class="card composer-card">
-                  <h3 class="section-title"><span class="step-dot">01</span>Hvem trenger hjelp?</h3>
-                  <div class="field-grid two">
-                    <div class="field"><label for="user">Bruker <span class="req">*</span></label><input id="user" name="user" class="input" maxlength="100" placeholder="Elev- eller lærernavn" list="user-suggestions"></div>
-                    <div class="field"><label for="room">Klasse / rom</label><input id="room" name="room" class="input" maxlength="80" placeholder="F.eks. 1STB · Rom 204" list="room-suggestions"></div>
-                  </div>
-                </section>
+              <section class="card composer-card step-card">
+                <h3 class="section-title"><span class="step-dot">1</span><span>Hvem er du?<small>Velg navnet ditt</small></span></h3>
+                <div class="field"><label class="sr-only" for="technician">Hvem er du?</label><select id="technician" name="technician" class="input input-big"><option value="">Velg tekniker</option></select><input id="technician-other" class="input input-big field-extra hidden" type="text" maxlength="80" placeholder="Skriv navnet ditt" aria-label="Navnet ditt"></div>
+              </section>
 
-                <section class="card composer-card">
-                  <h3 class="section-title"><span class="step-dot">02</span>Hva er problemet?</h3>
-                  <div class="field"><span class="field-label" id="category-label">Kategori <span class="req">*</span></span><div id="category-chips" class="chip-group" role="radiogroup" aria-labelledby="category-label"></div></div>
-                  <div class="field"><label for="symptom">Symptom <span class="req">*</span><small>Med brukerens ord</small></label><textarea id="symptom" name="symptom" class="input" rows="3" maxlength="2000" placeholder="Beskriv problemet slik brukeren opplever det …"></textarea></div>
-                  <div class="field"><span class="field-label" id="priority-label">Prioritet <span class="req">*</span></span><div id="priority-seg" class="segmented" role="radiogroup" aria-labelledby="priority-label"></div></div>
-                </section>
+              <section class="card composer-card step-card">
+                <h3 class="section-title"><span class="step-dot">2</span><span>Hvem trenger hjelp?<small>Skriv navnet på eleven eller læreren</small></span></h3>
+                <div class="field"><label class="sr-only" for="user">Navn</label><input id="user" name="user" class="input input-big" maxlength="100" placeholder="F.eks. Mia Hansen" list="user-suggestions"></div>
+              </section>
 
-                <section class="card composer-card">
-                  <h3 class="section-title"><span class="step-dot">03</span>Hva ble gjort?</h3>
-                  <div class="field"><span class="field-label" id="status-label">Status <span class="req">*</span></span><div id="status-seg" class="segmented segmented-wide" role="radiogroup" aria-labelledby="status-label"></div></div>
-                  <div class="field"><label for="action">Tiltak<small>Hva ble gjort?</small></label><textarea id="action" name="action" class="input" rows="2" maxlength="2000" placeholder="Beskriv stegene du utførte …"></textarea></div>
-                  <div class="field"><label for="cause">Årsak<small>Hvis kjent</small></label><textarea id="cause" name="cause" class="input" rows="2" maxlength="2000" placeholder="F.eks. fullt lagringsområde, feil passord …"></textarea></div>
-                </section>
+              <section class="card composer-card step-card step-wide">
+                <h3 class="section-title"><span class="step-dot">3</span><span>Hva er galt?<small>Velg det som passer best</small></span></h3>
+                <div class="field"><span class="sr-only" id="category-label">Hva slags problem</span><div id="category-chips" class="choice-grid" role="radiogroup" aria-labelledby="category-label"></div></div>
+                <div class="field"><label for="symptom" class="field-title">Fortell med dine egne ord</label><textarea id="symptom" name="symptom" class="input input-big" rows="3" maxlength="2000" placeholder="F.eks. «Skjermen er svart og PC-en vil ikke starte»"></textarea></div>
+              </section>
 
-                <details class="card composer-card more-details" id="more-details">
-                  <summary><span>Flere detaljer</span><small>Utstyr, serienummer, utlån og notat til neste tekniker</small><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
-                  <div class="field-grid two more-body">
-                    <div class="field"><label for="equipment">Utstyr</label><input id="equipment" name="equipment" class="input" maxlength="100" placeholder="F.eks. MacBook Air" list="equipment-suggestions"></div>
-                    <div class="field"><label for="serial">Serienummer / maskin-ID</label><input id="serial" name="serial" class="input mono" maxlength="100"></div>
-                    <div class="field"><label for="loan-id">Utlåns-ID<small>Hvis låne-PC er levert ut</small></label><input id="loan-id" name="loanId" class="input mono" maxlength="80" placeholder="F.eks. LÅN-024"></div>
-                    <div class="field span-2"><label for="shift-notes">Notat til neste tekniker<small>Kun internt</small></label><textarea id="shift-notes" name="shiftNotes" class="input" rows="2" maxlength="2000" placeholder="F.eks. følg opp etter kl. 12 …"></textarea></div>
-                  </div>
-                </details>
-              </div>
+              <section class="card composer-card step-card step-wide">
+                <h3 class="section-title"><span class="step-dot">4</span><span>Hva skjedde?<small>Velg hvordan det gikk</small></span></h3>
+                <div class="field"><span class="sr-only" id="status-label">Hvordan gikk det</span><div id="status-seg" class="choice-grid choice-grid-3" role="radiogroup" aria-labelledby="status-label"></div></div>
+                <div class="field"><label for="action" class="field-title">Hva gjorde du?<small>Valgfritt</small></label><textarea id="action" name="action" class="input input-big" rows="2" maxlength="2000" placeholder="F.eks. «Jeg startet PC-en på nytt»"></textarea></div>
+                <div class="field"><label for="cause" class="field-title">Hvorfor skjedde det?<small>Hvis du vet det</small></label><textarea id="cause" name="cause" class="input input-big" rows="2" maxlength="2000" placeholder="F.eks. «Passordet var glemt»"></textarea></div>
+              </section>
 
-              <aside class="composer-side">
-                <section class="card composer-card side-card">
-                  <h3 class="section-title">Saken</h3>
-                  <div class="field"><label for="case-number">Saksnummer<small>Foreslås automatisk</small></label><input id="case-number" name="number" class="input mono" maxlength="40" placeholder="Automatisk"></div>
-                  <div class="field"><label for="technician">Tekniker <span class="req">*</span></label><select id="technician" name="technician" class="input"><option value="">Velg tekniker</option></select><input id="technician-other" class="input field-extra hidden" type="text" maxlength="80" placeholder="Navn på tekniker" aria-label="Navn på annen tekniker"></div>
-                  <p id="draft-status" class="draft-status" aria-live="polite"></p>
-                </section>
-              </aside>
+              <section class="card composer-card case-meta">
+                <div class="field"><label for="case-number">Saksnummer<small>Settes automatisk</small></label><input id="case-number" name="number" class="input mono" maxlength="40" placeholder="Automatisk"></div>
+                <p id="draft-status" class="draft-status" aria-live="polite"></p>
+              </section>
             </div>
 
             <div class="savebar">
               <div class="savebar-info"><span id="form-missing" class="form-missing" aria-live="polite"></span></div>
               <div class="savebar-actions">
                 <button type="button" id="cancel-edit" class="btn btn-ghost hidden">Avbryt</button>
-                <button type="button" id="reset-form" class="btn btn-ghost">Tøm</button>
+                <button type="button" id="reset-form" class="btn btn-ghost">Start på nytt</button>
                 <button type="submit" id="submit-case" class="btn btn-primary" data-after="log"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span id="submit-label">Lagre sak</span><kbd>⌘↵</kbd></button>
                 <button type="submit" id="submit-new" class="btn btn-secondary" data-after="new"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Lagre og ny</button>
               </div>
             </div>
-            <datalist id="user-suggestions"></datalist><datalist id="room-suggestions"></datalist><datalist id="equipment-suggestions"></datalist>
+            <datalist id="user-suggestions"></datalist>
           </form>
         </section>
 

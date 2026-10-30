@@ -18,7 +18,7 @@
   const STATUS_META = [[STATUS.SOLVED, 'Løst', 'good'], [STATUS.WAITING, 'Venter', 'wait'], [STATUS.ESCALATED, 'Eskalert', 'alert']];
   const VIEWS = ['dashboard', 'new', 'log'];
   const VIEW_TITLES = { dashboard: 'Oversikt', new: 'Saksnotat', log: 'Sakslogg' };
-  const REQUIRED = [['technician', 'Tekniker'], ['user', 'Bruker'], ['category', 'Kategori'], ['symptom', 'Symptom'], ['priority', 'Prioritet'], ['status', 'Status']];
+  const REQUIRED = [['technician', 'Hvem du er'], ['user', 'Hvem som trenger hjelp'], ['category', 'Hva som er galt'], ['symptom', 'Fortell med egne ord'], ['status', 'Hva som skjedde']];
   const PAGE_SIZE = 50;
   const BACKUP_STALE_DAYS = 7;
 
@@ -72,14 +72,15 @@
     return `${Math.round(minutes / 1440)} d siden`;
   }
   const statusClass = s => s === STATUS.SOLVED ? 'status-lost' : s === STATUS.WAITING ? 'status-venter' : 'status-eskalert';
+  const statusTone = s => s === STATUS.SOLVED ? 'good' : s === STATUS.WAITING ? 'wait' : 'alert';
   const shortStatus = s => (STATUS_META.find(m => m[0] === s) || [0, 'Ukjent'])[1];
   const priorityTone = p => ({ Lav: 'lav', Middels: 'middels', 'Høy': 'hoy', Haster: 'haster' })[p] || 'middels';
 
   const ART_ATTR = 'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
   const ART = {
-    empty: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="30" y="22" width="90" height="62" rx="8" opacity=".35"/><rect x="22" y="32" width="90" height="62" rx="8" opacity=".6"/><rect x="14" y="42" width="90" height="62" rx="8" fill="#ffffff"/><path d="M30 62h40M30 74h58M30 86h28" opacity=".7"/><circle cx="112" cy="40" r="17" fill="#ffffff" stroke="#2563eb"/><path d="M104 40l6 6 11-12" stroke="#2563eb"/></svg>`,
-    search: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="18" y="20" width="84" height="70" rx="8" opacity=".5"/><path d="M32 40h40M32 54h56M32 68h30" opacity=".6"/><circle cx="100" cy="62" r="22" fill="#ffffff" stroke="#2563eb"/><path d="M92 62h16M116 78l16 16" stroke="#2563eb"/></svg>`,
-    clear: `<svg class="clear-art" viewBox="0 0 80 80" ${ART_ATTR}><circle cx="40" cy="40" r="25" stroke="#2563eb"/><path d="M28 41l9 9 16-18" stroke="#2563eb"/><path d="M40 6v7M40 67v7M6 40h7M67 40h7M16 16l5 5M59 59l5 5M64 16l-5 5M21 59l-5 5" opacity=".45"/></svg>`
+    empty: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="30" y="22" width="90" height="62" rx="8" opacity=".35"/><rect x="22" y="32" width="90" height="62" rx="8" opacity=".6"/><rect x="14" y="42" width="90" height="62" rx="8" fill="#ffffff"/><path d="M30 62h40M30 74h58M30 86h28" opacity=".7"/><circle cx="112" cy="40" r="17" fill="#ffffff" stroke="#286fec"/><path d="M104 40l6 6 11-12" stroke="#286fec"/></svg>`,
+    search: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="18" y="20" width="84" height="70" rx="8" opacity=".5"/><path d="M32 40h40M32 54h56M32 68h30" opacity=".6"/><circle cx="100" cy="62" r="22" fill="#ffffff" stroke="#286fec"/><path d="M92 62h16M116 78l16 16" stroke="#286fec"/></svg>`,
+    clear: `<svg class="clear-art" viewBox="0 0 80 80" ${ART_ATTR}><circle cx="40" cy="40" r="25" stroke="#286fec"/><path d="M28 41l9 9 16-18" stroke="#286fec"/><path d="M40 6v7M40 67v7M6 40h7M67 40h7M16 16l5 5M59 59l5 5M64 16l-5 5M21 59l-5 5" opacity=".45"/></svg>`
   };
 
   /* ---------- Tilstand ---------- */
@@ -213,6 +214,7 @@
   function applyView(view, moveFocus = true) {
     const previous = currentView;
     currentView = view;
+    document.body.dataset.page = view;
     if (view === 'log' && previous !== 'log') {
       if (!keepTechOnEnter) filters.tech = '';
       keepTechOnEnter = false;
@@ -236,9 +238,11 @@
 
   /* ---------- Komponist (ny sak / rediger) ---------- */
   function renderChoices() {
-    $('#category-chips').innerHTML = CATEGORIES.map(c => `<label class="chip"><input type="radio" name="category" value="${safe(c)}"><span>${safe(c)}</span></label>`).join('');
-    $('#priority-seg').innerHTML = PRIORITIES.map(p => `<label class="seg-option" data-tone="${priorityTone(p)}"><input type="radio" name="priority" value="${safe(p)}"><span><i class="dot"></i>${safe(p)}</span></label>`).join('');
-    $('#status-seg').innerHTML = STATUS_META.map(([value, label, tone]) => `<label class="seg-option" data-tone="${tone}" title="${safe(value)}"><input type="radio" name="status" value="${safe(value)}"><span><i class="dot"></i>${label}</span></label>`).join('');
+    const CATEGORY_INFO = { '#Hardware': ['hard-drive', 'Maskin / utstyr', 'PC, skjerm, mus'], '#Programvare': ['grid', 'Program / app', 'Noe åpner eller virker ikke'], '#Nettverk': ['wifi', 'Internett', 'Wi-Fi og nett'], '#Feide': ['key', 'Innlogging', 'Feide og passord'], '#Skriver': ['printer', 'Skriver', 'Utskrift'], '#Annet': ['info', 'Noe annet', 'Passer ikke over'] };
+    const STATUS_INFO = { good: ['check-circle', 'Fikset!', 'Problemet er løst'], wait: ['clock', 'Må vente', 'Venter på deler eller brukeren'], alert: ['alert-triangle', 'Trenger hjelp', 'Sendes til IKT-ansvarlig'] };
+    const choice = (name, value, tone, [iconName, title, hint]) => `<label class="choice" data-tone="${tone}"><input type="radio" name="${name}" value="${safe(value)}"><span class="choice-body"><span class="choice-icon"><svg class="icon" aria-hidden="true"><use href="#i-${iconName}"/></svg></span><strong>${safe(title)}</strong><small>${safe(hint)}</small></span></label>`;
+    $('#category-chips').innerHTML = CATEGORIES.map(c => choice('category', c, 'blue', CATEGORY_INFO[c] || ['info', c, ''])).join('');
+    $('#status-seg').innerHTML = STATUS_META.map(([value, , tone]) => choice('status', value, tone, STATUS_INFO[tone])).join('');
     $('#filter-category').innerHTML = '<option value="">Alle kategorier</option>' + CATEGORIES.map(c => `<option>${safe(c)}</option>`).join('');
     $('#technician').innerHTML = `<option value="">Velg tekniker</option>${TECHNICIANS.map(n => `<option value="${safe(n)}">${safe(n)}</option>`).join('')}<option value="__other">Annen tekniker …</option>`;
   }
@@ -250,9 +254,9 @@
 
   function formValues() {
     return {
-      technician: techValue(), number: $('#case-number').value.trim(), user: $('#user').value.trim(), room: $('#room').value.trim(),
-      category: radioValue('category'), priority: radioValue('priority'), symptom: $('#symptom').value.trim(), action: $('#action').value.trim(), cause: $('#cause').value.trim(),
-      status: radioValue('status'), equipment: $('#equipment').value.trim(), serial: $('#serial').value.trim(), loanId: $('#loan-id').value.trim(), shiftNotes: $('#shift-notes').value.trim()
+      technician: techValue(), number: $('#case-number').value.trim(), user: $('#user').value.trim(),
+      category: radioValue('category'), symptom: $('#symptom').value.trim(), action: $('#action').value.trim(), cause: $('#cause').value.trim(),
+      status: radioValue('status')
     };
   }
 
@@ -262,15 +266,13 @@
     else if (tech) { $('#technician').value = '__other'; $('#technician-other').value = tech; }
     else $('#technician').value = '';
     syncTechnicianOther();
-    $('#case-number').value = text(v.number); $('#user').value = text(v.user); $('#room').value = text(v.room);
+    $('#case-number').value = text(v.number); $('#user').value = text(v.user);
     $('#symptom').value = text(v.symptom); $('#action').value = text(v.action); $('#cause').value = text(v.cause);
-    $('#equipment').value = text(v.equipment); $('#serial').value = text(v.serial); $('#loan-id').value = text(v.loanId); $('#shift-notes').value = text(v.shiftNotes);
-    setRadio('category', text(v.category)); setRadio('priority', text(v.priority)); setRadio('status', text(v.status));
-    if (v.equipment || v.serial || v.loanId || v.shiftNotes) $('#more-details').open = true;
+    setRadio('category', text(v.category)); setRadio('status', text(v.status));
   }
 
   function missingFields(values = formValues()) { return REQUIRED.filter(([key]) => !values[key]); }
-  function fieldWrapper(key) { return ({ technician: '#technician', user: '#user', category: '#category-chips', symptom: '#symptom', priority: '#priority-seg', status: '#status-seg' })[key]; }
+  function fieldWrapper(key) { return ({ technician: '#technician', user: '#user', category: '#category-chips', symptom: '#symptom', status: '#status-seg' })[key]; }
 
   function updateFormStatus(markMissing = false) {
     const missing = missingFields();
@@ -288,7 +290,7 @@
   function saveDraft() {
     if (editingId) return;
     const v = formValues();
-    const hasContent = ['user', 'room', 'symptom', 'action', 'cause', 'equipment', 'serial', 'loanId', 'shiftNotes', 'category', 'priority', 'status'].some(k => v[k]);
+    const hasContent = ['user', 'symptom', 'action', 'cause', 'category', 'status'].some(k => v[k]);
     if (!hasContent) { try { localStorage.removeItem(DRAFT_KEY); } catch (error) { /* ignorer */ } $('#draft-status').textContent = ''; return; }
     if (writeJson(DRAFT_KEY, v)) $('#draft-status').textContent = `Utkast lagret kl. ${new Date().toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}`;
   }
@@ -307,11 +309,11 @@
   function setFormMode(editing, number = '') {
     $('#form-eyebrow').textContent = editing ? 'Rediger sak' : 'Ny sak';
     $('#form-heading').textContent = editing ? `Rediger ${number}` : 'Logg en sak';
-    $('#form-lead').textContent = editing ? 'Endringene lagres når du trykker «Lagre endringer».' : 'Fyll ut det viktigste, resten er valgfritt. Utkastet lagres automatisk.';
+    $('#form-lead').textContent = editing ? 'Endringene lagres når du trykker «Lagre endringer».' : 'Svar på fire små spørsmål. Det tar under ett minutt.';
     $('#submit-label').textContent = editing ? 'Lagre endringer' : 'Lagre sak';
     $('#submit-new').classList.toggle('hidden', editing);
     $('#cancel-edit').classList.toggle('hidden', !editing);
-    $('#reset-form').textContent = editing ? 'Tilbakestill' : 'Tøm';
+    $('#reset-form').textContent = editing ? 'Tilbakestill' : 'Start på nytt';
   }
 
   function resetForm({ keepDraft = false } = {}) {
@@ -323,7 +325,6 @@
     if (TECHNICIANS.includes(last)) $('#technician').value = last;
     syncTechnicianOther();
     $$('.is-missing').forEach(el => el.classList.remove('is-missing'));
-    $('#more-details').open = false;
     setFormMode(false);
     if (!keepDraft) clearDraft();
     formDirty = false;
@@ -379,7 +380,7 @@
       toast(`Sak ${values.number} er oppdatert.`);
     } else {
       savedId = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      if (!persist([...cases, { id: savedId, ...values, createdAt: now, updatedAt: now }])) return;
+      if (!persist([...cases, { id: savedId, priority: 'Middels', ...values, createdAt: now, updatedAt: now }])) return;
       toast(`Sak ${values.number} er lagret.`);
     }
     try { localStorage.setItem(LAST_TECH_KEY, values.technician); } catch (error) { /* ignorer */ }
@@ -426,18 +427,13 @@
     const counts = days.map(day => cases.filter(c => { const d = validDate(c.createdAt); return d && d.getFullYear() === day.getFullYear() && d.getMonth() === day.getMonth() && d.getDate() === day.getDate(); }).length);
     const total = counts.reduce((a, b) => a + b, 0);
     const max = Math.max(1, ...counts);
-    const yPos = v => 4 + (v / max) * 92;
-    const points = counts.map((count, i) => ({ x: i / 6 * 100, y: yPos(count), count, day: days[i] }));
-    const ticks = [...new Set(max >= 2 ? [0, Math.round(max / 2), max] : [0, max])];
-    const line = points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(2)} ${(100 - p.y).toFixed(2)}`).join(' ');
-    const base = (100 - yPos(0)).toFixed(2);
     const weekday = new Intl.DateTimeFormat('nb-NO', { weekday: 'short' });
     const longDate = new Intl.DateTimeFormat('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' });
-    $('#ticket-chart').innerHTML =
-      `<div class="chart-y">${ticks.map(t => `<span style="bottom:${yPos(t)}%">${t}</span>`).join('')}</div>` +
-      `<div class="chart-plot">${ticks.map(t => `<i class="chart-gridline" style="bottom:${yPos(t)}%"></i>`).join('')}<div class="chart-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ticket-chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2563eb" stop-opacity=".34"/><stop offset="100%" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs><path class="chart-area" d="${line} L100 ${base} L0 ${base} Z"/><path class="chart-line" d="${line}"/></svg>` +
-      `${points.map(p => `<span class="chart-dot" style="left:${p.x}%;top:${100 - p.y}%" title="${safe(longDate.format(p.day))}: ${p.count} ${p.count === 1 ? 'sak' : 'saker'}"></span>`).join('')}</div>${total === 0 ? '<div class="chart-empty">Ingen saker de siste 7 dagene</div>' : ''}</div>` +
-      `<div></div><div class="chart-x">${points.map((p, i) => `<span style="left:${p.x}%">${safe(weekday.format(days[i]).replace('.', ''))}</span>`).join('')}</div>`;
+    $('#ticket-chart').innerHTML = days.map((day, i) => {
+      const n = counts[i], height = n ? Math.max(8, n / max * 100) : 0;
+      const label = `${longDate.format(day)}: ${n} ${n === 1 ? 'sak' : 'saker'}`;
+      return `<div class="bar-col${i === 6 ? ' is-today' : ''}${n === max && n > 0 ? ' is-peak' : ''}" title="${safe(label)}"><span class="bar-value">${n}</span><div class="bar-track"><div class="bar-fill" style="height:${height}%"></div></div><span class="bar-day">${safe(weekday.format(day).replace('.', ''))}</span></div>`;
+    }).join('') + (total === 0 ? '<div class="chart-empty">Ingen saker de siste 7 dagene</div>' : '');
     $('#chart-week-total').textContent = `${total} ${total === 1 ? 'sak' : 'saker'}`;
   }
 
@@ -446,26 +442,31 @@
     const h = now.getHours();
     const greeting = h < 5 ? 'God natt' : h < 10 ? 'God morgen' : h < 12 ? 'God formiddag' : h < 18 ? 'God ettermiddag' : 'God kveld';
     const dateText = new Intl.DateTimeFormat('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
-    $('#greeting-eyebrow').textContent = `${greeting} · ${dateText[0].toUpperCase() + dateText.slice(1)}`;
+    $('#greeting-eyebrow').innerHTML = `<svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span>${safe(dateText[0].toUpperCase() + dateText.slice(1))}</span>`;
 
     const total = cases.length;
     const count = s => cases.filter(c => c.status === s).length;
     const solved = count(STATUS.SOLVED);
     const openCount = total - solved;
     const title = $('#greeting-title');
-    if (!total) { title.innerHTML = 'Ingen saker <em>ennå</em>'; $('#hero-lede').textContent = 'Logg den første saken for å komme i gang.'; }
-    else if (!openCount) { title.innerHTML = 'Alt er <em>fulgt opp</em>'; $('#hero-lede').textContent = `${total} ${total === 1 ? 'sak er' : 'saker er'} løst. Ingenting venter på deg akkurat nå.`; }
+    if (!total) { title.innerHTML = `${safe(greeting)}, <em>ingen saker ennå</em>`; $('#hero-lede').textContent = 'Logg den første saken for å komme i gang.'; }
+    else if (!openCount) { title.innerHTML = `${safe(greeting)}, <em>alt er fulgt opp</em>`; $('#hero-lede').textContent = `${total} ${total === 1 ? 'sak er' : 'saker er'} løst. Ingenting venter på deg akkurat nå.`; }
     else {
-      title.innerHTML = `${openCount} ${openCount === 1 ? 'sak' : 'saker'} <em>trenger oppfølging</em>`;
+      title.innerHTML = `${safe(greeting)}, <em>${openCount} ${openCount === 1 ? 'sak trenger' : 'saker trenger'} deg</em>`;
       const esc = count(STATUS.ESCALATED), wait = count(STATUS.WAITING);
       $('#hero-lede').textContent = [wait ? `${wait} venter på deler eller bruker` : '', esc ? `${esc} er eskalert til IKT-ansvarlig` : ''].filter(Boolean).join(' · ') + '.';
     }
+    const plural = n => `${n} ${n === 1 ? 'sak' : 'saker'}`;
+    $('#card-count-lost').textContent = plural(solved); $('#card-count-wait').textContent = plural(count(STATUS.WAITING)); $('#card-count-esc').textContent = plural(count(STATUS.ESCALATED));
     $('#stat-total').textContent = total; $('#stat-lost').textContent = solved;
     $('#stat-venter').textContent = count(STATUS.WAITING); $('#stat-eskalert').textContent = count(STATUS.ESCALATED);
     const rate = total ? Math.round(solved / total * 100) : 0;
     $('#solved-share').textContent = `${rate}% av sakene`;
     $('#resolution-rate').textContent = `${rate}%`;
-    $('#resolution-progress').style.width = `${rate}%`;
+    $('#resolution-progress').style.setProperty('--p', rate);
+    $('#hero-meter-fill').style.width = `${rate}%`;
+    $('#hero-meter-text').textContent = total ? `${rate} % løst · ${solved} av ${total}` : 'Ingen saker ennå';
+    $('#goal-gap').textContent = !total ? 'Mål 90 %' : rate >= 90 ? 'Målet er nådd' : `${90 - rate} % til målet`;
     renderTicketChart();
     updateBackupStatus();
 
@@ -476,14 +477,14 @@
     const attention = cases.filter(c => c.status !== STATUS.SOLVED)
       .sort((a, b) => (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0) || new Date(a.updatedAt) - new Date(b.updatedAt)).slice(0, 5);
     $('#attention-list').innerHTML = attention.length
-      ? attention.map((c, i) => `<button type="button" class="attention-row" data-open-id="${safe(c.id)}"><span class="row-no">${String(i + 1).padStart(2, '0')}</span><span class="attention-main"><strong>${safe(c.user || 'Ukjent bruker')}</strong><span>${safe(c.number)} · ${safe(c.symptom || c.category)}${c.technician ? ` · ${safe(c.technician)}` : ''}</span></span><span class="attention-age">${safe(ageText(c.updatedAt))}</span><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></button>`).join('')
+      ? attention.map(c => `<button type="button" class="attention-row" data-open-id="${safe(c.id)}">${avatar(c.technician)}<span class="attention-main"><strong>${safe(c.user || 'Ukjent bruker')}</strong><span>${safe(c.number)} · ${safe(c.symptom || c.category)}</span></span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="attention-age">${safe(ageText(c.updatedAt))}</span><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></button>`).join('')
       : `<div class="attention-clear">${ART.clear}<div><h3>${total ? 'Alt er fulgt opp' : 'Her er det rolig'}</h3><p>${total ? 'Ingen saker venter eller er eskalert akkurat nå.' : 'Når du logger en sak, dukker den opp her så lenge den ikke er løst.'}</p></div></div>`;
 
     const rows = TECHNICIANS.map(name => { const own = cases.filter(c => c.technician === name); return { name, total: own.length, solved: own.filter(c => c.status === STATUS.SOLVED).length }; });
     const others = cases.filter(c => !TECHNICIANS.includes(c.technician));
     if (others.length) rows.push({ name: 'Andre teknikere', total: others.length, solved: others.filter(c => c.status === STATUS.SOLVED).length });
     rows.sort((a, b) => b.total - a.total || b.solved - a.solved);
-    $('#leaderboard').innerHTML = rows.map((r, i) => `<div class="leader-row${i === 0 && r.total > 0 ? ' is-leader' : ''}">${avatar(r.name)}<span class="leader-name"><strong>${safe(r.name)}</strong><small>${r.solved} løst av ${r.total}</small></span><span class="leader-total">${r.total}</span></div>`).join('');
+    $('#leaderboard').innerHTML = rows.map((r, i) => `<div class="leader-row${i === 0 && r.total > 0 ? ' is-leader' : ''}">${avatar(r.name)}<span class="leader-name"><strong>${safe(r.name)}</strong><small>${r.solved} løst av ${r.total}</small><span class="leader-bar"><i style="width:${r.total ? Math.round(r.solved / r.total * 100) : 0}%"></i></span></span><span class="leader-total">${r.total}</span></div>`).join('');
   }
 
   function renderSidebar() {
@@ -521,12 +522,12 @@
   function renderTabs() {
     const base = cases.filter(c => matches(c, true));
     const order = [STATUS.WAITING, STATUS.ESCALATED, STATUS.SOLVED];
-    const tabs = [['', 'Alle', base.length], ...order.map(value => [value, shortStatus(value), base.filter(c => c.status === value).length])];
-    $('#status-tabs').innerHTML = tabs.map(([value, label, n]) => `<button type="button" class="seg-tab${filters.status === value ? ' is-active' : ''}" aria-pressed="${filters.status === value}" data-status-tab="${safe(value)}">${label}<span class="count">${n}</span></button>`).join('');
+    const tabs = [['', 'Alle', base.length, 'blue'], ...order.map(value => [value, shortStatus(value), base.filter(c => c.status === value).length, statusTone(value)])];
+    $('#status-tabs').innerHTML = tabs.map(([value, label, n, tone]) => `<button type="button" class="seg-tab${filters.status === value ? ' is-active' : ''}" data-tone="${tone}" aria-pressed="${filters.status === value}" data-status-tab="${safe(value)}"><i class="tab-dot"></i>${label}<span class="count">${n}</span></button>`).join('');
   }
 
   function rowMarkup(c) {
-    return `<button type="button" class="case-row${openCaseId === c.id ? ' is-selected' : ''}" data-open-id="${safe(c.id)}" aria-label="Åpne sak ${safe(c.number)}">${avatar(c.technician)}<span class="case-body"><span class="case-top"><strong>${safe(c.user || 'Ukjent bruker')}</strong><span class="case-number">${safe(c.number)}</span><time class="case-time" datetime="${safe(c.updatedAt)}">${safe(shortTime(c.updatedAt))}</time></span><span class="case-snippet">${safe(c.symptom || 'Ingen beskrivelse registrert')}</span><span class="case-tags"><span class="tag">${safe(c.category)}</span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="case-by">${safe(c.technician || '—')}</span></span></span><span class="case-side"><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></span></button>`;
+    return `<button type="button" class="case-row tone-${statusTone(c.status)}${openCaseId === c.id ? ' is-selected' : ''}" data-open-id="${safe(c.id)}" aria-label="Åpne sak ${safe(c.number)}">${avatar(c.technician)}<span class="case-body"><span class="case-top"><strong>${safe(c.user || 'Ukjent bruker')}</strong><span class="case-number">${safe(c.number)}</span><time class="case-time" datetime="${safe(c.updatedAt)}">${safe(shortTime(c.updatedAt))}</time></span><span class="case-snippet">${safe(c.symptom || 'Ingen beskrivelse registrert')}</span><span class="case-tags"><span class="tag">${safe(c.category)}</span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="case-by">${safe(c.technician || '—')}</span></span></span><span class="case-side"><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></span></button>`;
   }
 
   function listMarkup(items) {
@@ -616,7 +617,7 @@
   function updateSuggestions() {
     const uniq = key => [...new Set(cases.map(c => c[key]).filter(Boolean))].slice(0, 60);
     const fill = (id, values) => { $(id).innerHTML = values.map(v => `<option value="${safe(v)}"></option>`).join(''); };
-    fill('#user-suggestions', uniq('user')); fill('#room-suggestions', uniq('room')); fill('#equipment-suggestions', uniq('equipment'));
+    fill('#user-suggestions', uniq('user'));
   }
 
   function refreshAll() {
@@ -795,6 +796,22 @@
     toast('Hurtigmal fylt inn. Velg prioritet og status.');
   }));
 
+  $$('[data-new-status]').forEach(button => button.addEventListener('click', () => {
+    if (editingId) resetForm({ keepDraft: true });
+    setRadio('status', button.dataset.newStatus);
+    formDirty = true; scheduleDraft(); updateFormStatus();
+    navigate('new');
+  }));
+
+  const sidebarEl = $('#sidebar'), SIDEBAR_KEY = 'helpnotes_sidebar_collapsed';
+  function setSidebar(collapsed, save = true) {
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
+    $('#sidebar-toggle').setAttribute('aria-expanded', String(!collapsed));
+    $('#sidebar-toggle .sb-label').textContent = collapsed ? 'Vis' : 'Skjul';
+    if (save) { try { localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0'); } catch (error) { /* ignorer */ } }
+  }
+  $('#sidebar-toggle').addEventListener('click', () => setSidebar(!document.body.classList.contains('sidebar-collapsed')));
+  try { setSidebar(localStorage.getItem(SIDEBAR_KEY) === '1', false); } catch (error) { /* ignorer */ }
   $('#search-cases').addEventListener('input', event => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => { filters.query = event.target.value.trim().toLocaleLowerCase('nb'); visibleCount = PAGE_SIZE; renderLog(); }, 150);
