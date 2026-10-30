@@ -17,8 +17,29 @@
   <link rel="preload" href="fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/playfair-display-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
+  <script>
+    /* Hindrer at appen blinker fram før passordveggen: lås som standard, auth.js låser opp hvis du allerede er logget inn */
+    (function () { try { if (sessionStorage.getItem('helpnotes_unlocked') || localStorage.getItem('helpnotes_unlocked')) return; } catch (e) { /* ignorer */ } document.documentElement.classList.add('locked'); })();
+  </script>
 </head>
 <body>
+  <!-- ===== Passordvegg ===== -->
+  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <form id="gate-form" class="gate-card" autocomplete="on" novalidate>
+      <span class="gate-logo"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span>
+      <h1 id="gate-title">Helpnotes</h1>
+      <p>Skriv inn passordet for å åpne systemet.</p>
+      <label class="sr-only" for="gate-password">Passord</label>
+      <div class="gate-field">
+        <input id="gate-password" name="password" type="password" class="input input-big" autocomplete="current-password" placeholder="Passord" required>
+        <button type="button" id="gate-toggle" class="gate-toggle" aria-label="Vis passord" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></button>
+      </div>
+      <p id="gate-error" class="gate-error" role="alert" aria-live="assertive"></p>
+      <label class="gate-remember"><input id="gate-remember" type="checkbox"> Husk meg på denne enheten</label>
+      <button type="submit" class="btn btn-primary gate-submit"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>Åpne Helpnotes</button>
+    </form>
+  </div>
+
   <a class="skip-link" href="#content">Hopp til innhold</a>
   <!-- Innebygd ikonsett (fungerer uten nett) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -56,6 +77,7 @@
       <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.8L3 8M3 3v5h5"/></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
       <symbol id="i-chevrons-right" viewBox="0 0 24 24"><path d="M6 17l5-5-5-5M13 17l5-5-5-5"/></symbol>
       <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
       <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
@@ -84,6 +106,7 @@
       <div class="sb-group sb-account">
         <div class="sb-heading sb-label">Konto</div>
         <button type="button" class="sb-option" data-cloud-open data-cloud-state="off" aria-haspopup="dialog" title="Lagring og skysynk"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-cloud"/></svg></span><span class="sb-label">Lagring</span><span class="sb-status sb-label"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></span></button>
+        <button type="button" class="sb-option" data-lock title="Lås systemet"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span><span class="sb-label">Lås systemet</span></button>
       </div>
       <button type="button" id="sidebar-toggle" class="sb-toggle" aria-expanded="true" aria-controls="sidebar" title="Skjul/vis sidemeny"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-chevrons-right"/></svg></span><span class="sb-label">Skjul</span></button>
     </nav>
@@ -96,7 +119,10 @@
             <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
             <span class="brand-text"><strong>Helpnotes</strong></span>
           </a>
-          <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-open data-cloud-state="off" aria-label="Lagring og skysynk" aria-haspopup="dialog"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
+          <div class="navbar-actions">
+            <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-open data-cloud-state="off" aria-label="Lagring og skysynk" aria-haspopup="dialog"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
+            <button type="button" class="icon-btn" data-lock aria-label="Lås systemet"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></button>
+          </div>
         </div>
       </header>
 
@@ -348,6 +374,7 @@
   <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
   <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script src="supabase.js"></script>
   <script src="script.js"></script>
 </body>

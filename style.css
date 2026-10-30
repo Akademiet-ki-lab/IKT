@@ -746,3 +746,25 @@ select.input-big{height:56px}
   .attention-row .prio,.attention-age{display:none}
   .bars{gap:6px}
 }
+
+/* ---------- Passordvegg ---------- */
+.gate{display:none;position:fixed;inset:0;z-index:1000;place-items:center;padding:20px;background:linear-gradient(180deg,#1858e0 0,#3f7eee 45%,#a9c6f8 80%,#e3ecfc 100%);overflow:auto}
+html.locked .gate{display:grid}
+html.locked body{overflow:hidden}
+html.locked #app{visibility:hidden}
+.gate-card{display:grid;justify-items:center;width:min(420px,100%);padding:36px 32px 30px;border-radius:28px;background:#fff;box-shadow:0 30px 80px rgba(10,40,120,.35);text-align:center;animation:modal-in .4s var(--ease)}
+.gate.is-wrong .gate-card{animation:gate-shake .4s}
+@keyframes gate-shake{20%{transform:translateX(-10px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.gate-logo{display:grid;place-items:center;width:60px;height:60px;margin-bottom:16px;border-radius:18px;background:linear-gradient(145deg,#4a8dff,#286fec);color:#fff;font-size:28px;box-shadow:0 8px 20px rgba(40,111,236,.35)}
+.gate-card h1{font:700 30px/1.1 var(--display);letter-spacing:-.03em}
+.gate-card p{margin-top:8px;color:var(--text-3);font-size:15px}
+.gate-field{position:relative;width:100%;margin-top:22px}
+.gate-field .input{padding-right:52px}
+.gate-toggle{position:absolute;right:8px;top:50%;display:grid;place-items:center;width:40px;height:40px;transform:translateY(-50%);border:0;border-radius:50%;background:transparent;color:var(--text-3);font-size:20px}
+.gate-toggle:hover{background:var(--surface-2);color:var(--text)}
+.gate-toggle[aria-pressed=true]{color:var(--accent)}
+.gate-card .gate-error{min-height:20px;margin-top:10px;color:var(--bad-text);font-size:14px;font-weight:550}
+.gate-remember{display:flex;align-items:center;gap:9px;margin-top:6px;color:var(--text-2);font-size:14px;cursor:pointer}
+.gate-remember input{width:18px;height:18px;accent-color:var(--accent)}
+.gate-submit{width:100%;margin-top:20px;padding:15px 20px;font-size:16px}
+.navbar-actions{display:flex;align-items:center;gap:8px}
