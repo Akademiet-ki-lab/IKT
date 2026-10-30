@@ -95,7 +95,6 @@
   let draftTimer = 0;
   let searchTimer = 0;
   let keepTechOnEnter = false;
-  let lastFocusBeforeModal = null;
   let localAvailable = true;
   const filters = { query: '', status: '', tech: '', category: '' };
 
@@ -183,10 +182,8 @@
     const label = !localAvailable && view.state === 'off' ? 'Lagring utilgjengelig' : view.label;
     $$('[data-cloud-state]').forEach(el => { el.dataset.cloudState = view.state; });
     $$('[data-cloud-label]').forEach(el => { el.textContent = label; });
-    const title = $('[data-cloud-title]'); if (title) title.textContent = label;
-    const detail = $('[data-cloud-detail]'); if (detail) detail.textContent = view.detail || '';
     $('#footer-storage').textContent = view.state === 'off' ? 'Saksdata lagres lokalt på denne enheten' : 'Saksdata lagres lokalt og synkroniseres med Supabase';
-    $('#cloud-sync-now').classList.toggle('hidden', !cloud.isConfigured());
+    $$('[data-cloud-sync]').forEach(el => { el.title = view.detail || 'Synkroniser sakslogg med Supabase'; });
   }
 
   function updateBackupStatus() {
@@ -684,79 +681,12 @@
     } catch (error) { toast(`Import mislyktes: ${error.message || 'Kunne ikke lese filen.'}`, 'error'); }
   }
 
-  /* ---------- Innstillinger: Supabase ---------- */
-  function cloudMessage(message, kind = '') { const el = $('#cloud-message'); el.textContent = message; el.className = `cloud-message${kind ? ` is-${kind}` : ''}`; }
-  function cloudDraft() { return { url: $('#cloud-url').value, anonKey: $('#cloud-key').value, requireLogin: $('#cloud-require-login').checked }; }
-
-  function updateAuthBox() {
-    const cfg = cloud.getConfig();
-    const needsLogin = $('#cloud-require-login').checked;
-    $('#cloud-auth-box').classList.toggle('hidden', !needsLogin);
-    $('#cloud-signout').classList.toggle('hidden', !cfg.session);
-    $('#cloud-signin').classList.toggle('hidden', !!cfg.session);
-    $('#cloud-session').textContent = cfg.session ? `Innlogget som ${cfg.email || 'bruker'}` : '';
-    $('#cloud-sync-now').classList.toggle('hidden', !cloud.isConfigured());
-  }
-
-  function openSettings() {
-    const cfg = cloud.getConfig();
-    $('#cloud-url').value = cfg.url; $('#cloud-key').value = cfg.anonKey; $('#cloud-require-login').checked = cfg.requireLogin !== false;
-    $('#cloud-email').value = cfg.email || ''; $('#cloud-password').value = '';
-    $('#cloud-sql').textContent = cloud.SQL;
-    cloudMessage('');
-    updateAuthBox();
-    lastFocusBeforeModal = document.activeElement;
-    $('#settings-modal').hidden = false;
-    $('#app').inert = true;
-    $('#settings-modal .modal-card').focus();
-  }
-  function closeSettings() { $('#settings-modal').hidden = true; $('#app').inert = false; lastFocusBeforeModal?.focus?.(); }
-
-  async function copySql() {
-    try { await navigator.clipboard.writeText(cloud.SQL); toast('SQL-skriptet er kopiert. Lim det inn i Supabase → SQL Editor.'); }
-    catch (error) {
-      const area = document.createElement('textarea'); area.value = cloud.SQL; document.body.append(area); area.select();
-      try { document.execCommand('copy'); toast('SQL-skriptet er kopiert.'); } catch (e) { toast('Kunne ikke kopiere. Åpne «Vis SQL-skriptet» og kopier manuelt.', 'error'); }
-      area.remove();
-    }
-  }
-
-  async function handleTest() {
-    cloudMessage('Tester tilkobling …');
-    const result = await cloud.testConnection(cloudDraft());
-    cloudMessage(result.message, result.ok ? 'ok' : 'error');
-  }
-
-  async function handleSave() {
-    const draft = cloudDraft();
-    const check = cloud.validateConfig(draft.url, draft.anonKey);
-    if (!check.ok) { cloudMessage(check.message, 'error'); return; }
-    cloud.saveConfig({ url: check.url, anonKey: check.anonKey, requireLogin: draft.requireLogin });
-    cloud.refreshStatus(); updateAuthBox();
-    if (draft.requireLogin && !cloud.getConfig().session) { cloudMessage('Lagret. Logg inn med brukeren du opprettet i Supabase for å starte synkroniseringen.', 'ok'); return; }
-    cloudMessage('Lagret. Synkroniserer …');
-    const result = await cloud.syncNow();
-    cloudMessage(result.ok ? 'Koblet til og synkronisert.' : (result.error?.message || 'Lagret, men synkroniseringen feilet.'), result.ok ? 'ok' : 'error');
-  }
-
-  async function handleSignIn() {
-    const draft = cloudDraft();
-    const check = cloud.validateConfig(draft.url, draft.anonKey);
-    if (!check.ok) { cloudMessage(check.message, 'error'); return; }
-    cloud.saveConfig({ url: check.url, anonKey: check.anonKey, requireLogin: draft.requireLogin });
-    try {
-      cloudMessage('Logger inn …');
-      await cloud.signIn($('#cloud-email').value, $('#cloud-password').value);
-      $('#cloud-password').value = '';
-      cloudMessage('Innlogget. Synkroniserer …', 'ok'); updateAuthBox();
-      const result = await cloud.syncNow();
-      if (result.ok) cloudMessage('Innlogget og synkronisert.', 'ok'); else if (result.error) cloudMessage(result.error.message, 'error');
-    } catch (error) { cloudMessage(error.message, 'error'); }
-  }
-
   /* ---------- Hendelser ---------- */
   $$('[data-view]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.view)));
-  $$('[data-cloud-open]').forEach(button => button.addEventListener('click', openSettings));
+  $$('[data-cloud-sync]').forEach(button => button.addEventListener('click', async () => {
+    const result = await cloud.syncNow();
+    if (result.ok) toast('Sakslogg synkronisert med Supabase.'); else if (result.error) toast(result.error.message, 'error');
+  }));
   $('.skip-link').addEventListener('click', event => { event.preventDefault(); $('#content').focus(); });
   window.addEventListener('hashchange', () => {
     const raw = location.hash.replace('#', '');
@@ -874,30 +804,13 @@
   $('#import-trigger').addEventListener('click', () => $('#import-file').click());
   $('#import-file').addEventListener('change', event => { const file = event.target.files[0]; if (file) importJson(file); event.target.value = ''; });
 
-  $('#settings-close').addEventListener('click', closeSettings);
-  $('#settings-modal').addEventListener('click', event => { if (event.target.id === 'settings-modal') closeSettings(); });
-  $('#cloud-copy-sql').addEventListener('click', copySql);
-  $('#cloud-test').addEventListener('click', handleTest);
-  $('#cloud-save').addEventListener('click', handleSave);
-  $('#cloud-signin').addEventListener('click', handleSignIn);
-  $('#cloud-require-login').addEventListener('change', updateAuthBox);
-  $('#cloud-signout').addEventListener('click', () => { cloud.signOut(); updateAuthBox(); cloudMessage('Du er logget ut.', 'ok'); });
-  $('#cloud-sync-now').addEventListener('click', async () => { cloudMessage('Synkroniserer …'); const r = await cloud.syncNow(); cloudMessage(r.ok ? 'Synkronisert.' : (r.error?.message || 'Synkroniseringen feilet.'), r.ok ? 'ok' : 'error'); });
-  $('#cloud-disconnect').addEventListener('click', () => {
-    if (!cloud.isConfigured() && !$('#cloud-url').value) { closeSettings(); return; }
-    if (!confirm('Koble fra Supabase? Sakene beholdes lokalt på denne enheten og i Supabase.')) return;
-    cloud.clearConfig(); $('#cloud-url').value = ''; $('#cloud-key').value = ''; updateAuthBox(); cloudMessage('Frakoblet. Sakene lagres nå kun lokalt.', 'ok');
-  });
-
   document.addEventListener('keydown', event => {
-    const modalOpen = !$('#settings-modal').hidden;
     if (event.key === 'Escape') {
-      if (modalOpen) { closeSettings(); return; }
       if (openCaseId && currentView === 'log') { closeCase(); return; }
     }
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && currentView === 'new' && !modalOpen) { event.preventDefault(); form.requestSubmit($('#submit-case')); return; }
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && currentView === 'new') { event.preventDefault(); form.requestSubmit($('#submit-case')); return; }
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName) || event.target.isContentEditable;
-    if (typing || modalOpen || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === 'n' || event.key === 'N') { event.preventDefault(); navigate('new'); }
     else if (event.key === '/') { event.preventDefault(); navigate('log'); setTimeout(() => $('#search-cases').focus(), 60); }
   });

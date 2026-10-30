@@ -18,5 +18,5 @@ window.IKT_CONFIG = {
   passwordHash: 'aee0422a11276d69b5bbfbfd3bb2db09f20cfdd285afcf0849744da9cd939af6',
   supabaseUrl: 'https://wewudkxnfhqcearubply.supabase.co',
   supabaseAnonKey: 'sb_publishable_7iCuAQnx14gEPtAR3ZqD-w_Ajrxo03J', // publishable-nøkkel: trygg i nettleseren
-  requireLogin: true    // true = bare innloggede brukere har tilgang (anbefalt)
+  requireLogin: false   // false = ingen Supabase-innlogging; passordveggen er beskyttelsen
 };

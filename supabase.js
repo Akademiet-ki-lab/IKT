@@ -8,58 +8,10 @@
   'use strict';
 
   const CONFIG_KEY = 'ikt_supabase_config';
-  const TABLE = 'tickets';
+  const TABLE = 'helpnotes_tickets';
   const PAGE = 1000;
   const PUSH_CHUNK = 200;
   const SYNC_INTERVAL_MS = 45000;
-
-  /* SQL som lager tabellen. Samme innhold finnes i supabase/schema.sql. */
-  const SQL = `-- Helpnotes: saksnotater i Supabase
--- Kjør hele skriptet i Supabase → SQL Editor → Run.
-
-create table if not exists public.tickets (
-  id          text primary key,
-  number      text        not null,
-  technician  text        not null default '',
-  user_name   text        not null default '',
-  room        text        not null default '',
-  equipment   text        not null default '',
-  serial      text        not null default '',
-  loan_id     text        not null default '',
-  category    text        not null default '#Annet',
-  priority    text        not null default 'Middels',
-  symptom     text        not null default '',
-  cause       text        not null default '',
-  action      text        not null default '',
-  shift_notes text        not null default '',
-  status      text        not null default 'Venter på deler/bruker',
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
-  deleted_at  timestamptz
-);
-
-create index if not exists tickets_updated_at_idx on public.tickets (updated_at desc);
-create index if not exists tickets_number_idx on public.tickets (number);
-
--- Sikkerhet: bare innloggede brukere får lese og skrive.
-alter table public.tickets enable row level security;
-
-drop policy if exists "tickets_select" on public.tickets;
-drop policy if exists "tickets_insert" on public.tickets;
-drop policy if exists "tickets_update" on public.tickets;
-create policy "tickets_select" on public.tickets for select to authenticated using (true);
-create policy "tickets_insert" on public.tickets for insert to authenticated with check (true);
-create policy "tickets_update" on public.tickets for update to authenticated using (true) with check (true);
-
-grant select, insert, update on public.tickets to authenticated;
-
--- Opprett en bruker under Authentication → Users → Add user (kryss av "Auto Confirm User").
--- Logg deretter inn i Helpnotes under Lagring.
---
--- RASK TESTING UTEN INNLOGGING (kun for testdata, aldri elevdata):
---   bytt "to authenticated" med "to anon, authenticated" i policyene over
---   og kjør: grant select, insert, update on public.tickets to anon;
-`;
 
   /* ---------- Små hjelpere ---------- */
   const text = value => String(value ?? '');
@@ -229,8 +181,8 @@ grant select, insert, update on public.tickets to authenticated;
     let info = {};
     try { info = JSON.parse(body); } catch (error) { info = { message: body }; }
     const msg = text(info.message || info.error_description || info.hint || body).slice(0, 200);
-    if (info.code === 'PGRST205' || info.code === '42P01' || status === 404) return new CloudError('Tabellen «tickets» finnes ikke. Kjør SQL-skriptet i Supabase (steg 2).', 'schema', status);
-    if (status === 401 || status === 403 || info.code === '42501') return new CloudError('Ingen tilgang. Logg inn, eller sjekk at policyene fra SQL-skriptet er opprettet.', 'auth', status);
+    if (info.code === 'PGRST205' || info.code === '42P01' || status === 404) return new CloudError('Tabellen «helpnotes_tickets» finnes ikke. Kjør supabase/schema.sql i Supabase → SQL Editor.', 'schema', status);
+    if (status === 401 || status === 403 || info.code === '42501') return new CloudError('Ingen tilgang til Supabase. Sjekk at policyene fra supabase/schema.sql er opprettet.', 'auth', status);
     return new CloudError(msg || `Feil fra Supabase (${status}).`, 'server', status);
   }
 
@@ -277,7 +229,7 @@ grant select, insert, update on public.tickets to authenticated;
     try {
       await api(cfg, `${TABLE}?select=id&limit=1`);
       if (cfg.requireLogin && !cfg.session) return { ok: true, message: 'Tilkoblingen virker. Logg inn for å lagre og hente saker.' };
-      return { ok: true, message: 'Tilkoblingen virker, og tabellen «tickets» er klar.' };
+      return { ok: true, message: 'Tilkoblingen virker, og tabellen «helpnotes_tickets» er klar.' };
     } catch (error) { return { ok: false, message: error.message }; }
   }
 
@@ -370,7 +322,7 @@ grant select, insert, update on public.tickets to authenticated;
   }
 
   const api_ = {
-    SQL, TABLE, CONFIG_KEY,
+    TABLE, CONFIG_KEY,
     getConfig, saveConfig, clearConfig, isConfigured, validateConfig,
     signIn, signOut, testConnection,
     attach, requestSync, syncNow: sync, refreshStatus: refreshIdleStatus,

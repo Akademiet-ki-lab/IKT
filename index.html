@@ -105,7 +105,7 @@
       </div>
       <div class="sb-group sb-account">
         <div class="sb-heading sb-label">Konto</div>
-        <button type="button" class="sb-option" data-cloud-open data-cloud-state="off" aria-haspopup="dialog" title="Lagring og skysynk"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-cloud"/></svg></span><span class="sb-label">Lagring</span><span class="sb-status sb-label"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></span></button>
+        <button type="button" class="sb-option" data-cloud-sync data-cloud-state="off" title="Synkroniser sakslogg med Supabase"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-cloud"/></svg></span><span class="sb-label">Sakslogg</span><span class="sb-status sb-label"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></span></button>
         <button type="button" class="sb-option" data-lock title="Lås systemet"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span><span class="sb-label">Lås systemet</span></button>
       </div>
       <button type="button" id="sidebar-toggle" class="sb-toggle" aria-expanded="true" aria-controls="sidebar" title="Skjul/vis sidemeny"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-chevrons-right"/></svg></span><span class="sb-label">Skjul</span></button>
@@ -120,7 +120,7 @@
             <span class="brand-text"><strong>Helpnotes</strong></span>
           </a>
           <div class="navbar-actions">
-            <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-open data-cloud-state="off" aria-label="Lagring og skysynk" aria-haspopup="dialog"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
+            <button type="button" class="cloud-chip cloud-chip-compact" data-cloud-sync data-cloud-state="off" aria-label="Synkroniser sakslogg med Supabase"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></button>
             <button type="button" class="icon-btn" data-lock aria-label="Lås systemet"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></button>
           </div>
         </div>
@@ -314,7 +314,7 @@
           </div>
         </section>
       </main>
-      <footer class="app-footer">Helpnotes · <span id="footer-storage">Saksdata lagres lokalt på denne enheten</span></footer>
+      <footer class="app-footer">Helpnotes · <span id="footer-storage">Saksdata lagres lokalt og i Supabase</span></footer>
     </div>
 
     <!-- Tabbar (mobil) -->
@@ -326,49 +326,6 @@
   </div>
 
   <div id="sheet-backdrop" class="sheet-backdrop"></div>
-
-  <!-- ===== Innstillinger: skylagring (Supabase) ===== -->
-  <div id="settings-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="settings-title">
-    <div class="modal-card" tabindex="-1">
-      <div class="modal-head">
-        <div><div class="eyebrow">Innstillinger</div><h2 id="settings-title">Skylagring med Supabase</h2></div>
-        <button type="button" id="settings-close" class="icon-btn" aria-label="Lukk"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
-      </div>
-      <div class="modal-body">
-        <div id="cloud-banner" class="cloud-banner" data-cloud-state="off"><span class="cloud-dot" aria-hidden="true"></span><div><strong data-cloud-title>Ikke koblet til</strong><span data-cloud-detail>Sakene lagres kun på denne enheten.</span></div></div>
-
-        <ol class="setup-steps">
-          <li><strong>Opprett et gratis prosjekt</strong> på supabase.com. Velg en EU-region siden sakene inneholder elevnavn.</li>
-          <li><strong>Lag tabellen.</strong> Åpne <em>SQL Editor</em> i Supabase, lim inn skriptet under og trykk <em>Run</em>.
-            <div class="inline-actions"><button type="button" id="cloud-copy-sql" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>Kopier SQL</button></div>
-            <details class="sql-details"><summary>Vis SQL-skriptet</summary><pre id="cloud-sql" tabindex="0"></pre></details>
-          </li>
-          <li><strong>Lim inn URL og nøkkel</strong> fra <em>Project Settings → API</em>. Bruk <em>anon</em>- eller <em>publishable</em>-nøkkelen, aldri <em>service_role</em>.</li>
-        </ol>
-
-        <div class="field"><label for="cloud-url">Project URL</label><input id="cloud-url" class="input mono" type="url" placeholder="https://xxxxxxxx.supabase.co" autocomplete="off" spellcheck="false"></div>
-        <div class="field"><label for="cloud-key">Anon / publishable key</label><input id="cloud-key" class="input mono" type="text" placeholder="eyJ… eller sb_publishable_…" autocomplete="off" spellcheck="false"></div>
-        <label class="check-row"><input id="cloud-require-login" type="checkbox" checked><span><strong>Krever innlogging (anbefalt)</strong><small>Bare brukere du oppretter i Supabase kan lese og skrive saker.</small></span></label>
-
-        <div id="cloud-auth-box" class="auth-box">
-          <div class="field-grid two">
-            <div class="field"><label for="cloud-email">E-post</label><input id="cloud-email" class="input" type="email" autocomplete="username" placeholder="support@skole.no"></div>
-            <div class="field"><label for="cloud-password">Passord</label><input id="cloud-password" class="input" type="password" autocomplete="current-password"></div>
-          </div>
-          <div class="inline-actions"><button type="button" id="cloud-signin" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>Logg inn</button><button type="button" id="cloud-signout" class="btn btn-ghost btn-sm hidden">Logg ut</button><span id="cloud-session" class="muted"></span></div>
-        </div>
-        <p id="cloud-message" class="cloud-message" role="status" aria-live="polite"></p>
-      </div>
-      <div class="modal-foot">
-        <button type="button" id="cloud-disconnect" class="btn btn-ghost">Koble fra</button>
-        <div class="modal-foot-actions">
-          <button type="button" id="cloud-test" class="btn btn-secondary">Test tilkobling</button>
-          <button type="button" id="cloud-sync-now" class="btn btn-secondary hidden"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>Synk nå</button>
-          <button type="button" id="cloud-save" class="btn btn-primary">Lagre og koble til</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div id="print-area" aria-hidden="true"></div>
   <div id="toast-region" class="toast-region" aria-live="polite"></div>

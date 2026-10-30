@@ -1,7 +1,7 @@
 -- Helpnotes: saksnotater i Supabase
 -- Kjør hele skriptet i Supabase → SQL Editor → Run.
 
-create table if not exists public.tickets (
+create table if not exists public.helpnotes_tickets (
   id          text primary key,
   number      text        not null,
   technician  text        not null default '',
@@ -22,24 +22,18 @@ create table if not exists public.tickets (
   deleted_at  timestamptz
 );
 
-create index if not exists tickets_updated_at_idx on public.tickets (updated_at desc);
-create index if not exists tickets_number_idx on public.tickets (number);
+create index if not exists helpnotes_tickets_updated_at_idx on public.helpnotes_tickets (updated_at desc);
+create index if not exists helpnotes_tickets_number_idx on public.helpnotes_tickets (number);
 
--- Sikkerhet: bare innloggede brukere får lese og skrive.
-alter table public.tickets enable row level security;
+-- Sikkerhet: appen bruker publishable/anon-nøkkelen og er beskyttet av passordveggen i appen.
+-- Alle med nøkkelen kan lese og skrive saker (ingen sletting; slettede saker får deleted_at).
+alter table public.helpnotes_tickets enable row level security;
 
-drop policy if exists "tickets_select" on public.tickets;
-drop policy if exists "tickets_insert" on public.tickets;
-drop policy if exists "tickets_update" on public.tickets;
-create policy "tickets_select" on public.tickets for select to authenticated using (true);
-create policy "tickets_insert" on public.tickets for insert to authenticated with check (true);
-create policy "tickets_update" on public.tickets for update to authenticated using (true) with check (true);
+drop policy if exists "helpnotes_tickets_select" on public.helpnotes_tickets;
+drop policy if exists "helpnotes_tickets_insert" on public.helpnotes_tickets;
+drop policy if exists "helpnotes_tickets_update" on public.helpnotes_tickets;
+create policy "helpnotes_tickets_select" on public.helpnotes_tickets for select to anon, authenticated using (true);
+create policy "helpnotes_tickets_insert" on public.helpnotes_tickets for insert to anon, authenticated with check (true);
+create policy "helpnotes_tickets_update" on public.helpnotes_tickets for update to anon, authenticated using (true) with check (true);
 
-grant select, insert, update on public.tickets to authenticated;
-
--- Opprett en bruker under Authentication → Users → Add user (kryss av "Auto Confirm User").
--- Logg deretter inn i Helpnotes under Lagring.
---
--- RASK TESTING UTEN INNLOGGING (kun for testdata, aldri elevdata):
---   bytt "to authenticated" med "to anon, authenticated" i policyene over
---   og kjør: grant select, insert, update on public.tickets to anon;
+grant select, insert, update on public.helpnotes_tickets to anon, authenticated;
