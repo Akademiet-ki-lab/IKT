@@ -1,4 +1,4 @@
--- IKT-pulten: saksnotater i Supabase
+-- Helpnotes: saksnotater i Supabase
 -- Kjør hele skriptet i Supabase → SQL Editor → Run.
 
 create table if not exists public.tickets (
@@ -38,7 +38,7 @@ create policy "tickets_update" on public.tickets for update to authenticated usi
 grant select, insert, update on public.tickets to authenticated;
 
 -- Opprett en bruker under Authentication → Users → Add user (kryss av "Auto Confirm User").
--- Logg deretter inn i IKT-pulten under Lagring.
+-- Logg deretter inn i Helpnotes under Lagring.
 --
 -- RASK TESTING UTEN INNLOGGING (kun for testdata, aldri elevdata):
 --   bytt "to authenticated" med "to anon, authenticated" i policyene over

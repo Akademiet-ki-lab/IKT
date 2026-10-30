@@ -1,4 +1,4 @@
-/* IKT-pulten — skysynk mot Supabase (REST, uten SDK og uten CDN)
+/* Helpnotes — skysynk mot Supabase (REST, uten SDK og uten CDN)
  *
  * Offline-først: saker lagres alltid lokalt først. Er Supabase koblet til, synkroniseres
  * endringene i bakgrunnen (henter nye saker, sender egne, løser konflikter etter
@@ -14,7 +14,7 @@
   const SYNC_INTERVAL_MS = 45000;
 
   /* SQL som lager tabellen. Samme innhold finnes i supabase/schema.sql. */
-  const SQL = `-- IKT-pulten: saksnotater i Supabase
+  const SQL = `-- Helpnotes: saksnotater i Supabase
 -- Kjør hele skriptet i Supabase → SQL Editor → Run.
 
 create table if not exists public.tickets (
@@ -54,7 +54,7 @@ create policy "tickets_update" on public.tickets for update to authenticated usi
 grant select, insert, update on public.tickets to authenticated;
 
 -- Opprett en bruker under Authentication → Users → Add user (kryss av "Auto Confirm User").
--- Logg deretter inn i IKT-pulten under Lagring.
+-- Logg deretter inn i Helpnotes under Lagring.
 --
 -- RASK TESTING UTEN INNLOGGING (kun for testdata, aldri elevdata):
 --   bytt "to authenticated" med "to anon, authenticated" i policyene over

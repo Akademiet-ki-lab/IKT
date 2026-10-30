@@ -1,4 +1,4 @@
-/* IKT-pulten — valgfri forhåndsutfylling av Supabase-oppsettet.
+/* Helpnotes — valgfri forhåndsutfylling av Supabase-oppsettet.
  *
  * Du trenger IKKE å redigere denne filen: åpne appen og trykk «Lagring» nederst i
  * sidemenyen (eller skyikonet øverst på mobil), og lim inn URL og nøkkel der.

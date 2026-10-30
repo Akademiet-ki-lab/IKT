@@ -224,7 +224,7 @@
       if (button.classList.contains('side-new')) return;
       if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
     });
-    document.title = `IKT-pulten · ${VIEW_TITLES[view]}`;
+    document.title = `Helpnotes · ${VIEW_TITLES[view]}`;
     if (view === 'log') { visibleCount = PAGE_SIZE; renderLog(); }
     if (view === 'dashboard') renderDashboard();
     renderSidebar();
@@ -633,7 +633,7 @@
       ? [['Mottatt tidspunkt', prettyDate(new Date().toISOString())], ['Saksnummer', item.number], ['Elev / innlevert av', item.user], ['Klasse / rom', item.room], ['Utstyr', item.equipment], ['Serienummer / maskin-ID', item.serial], ['Utlåns-ID', item.loanId], ['Mottakende tekniker', item.technician], ['Medfølgende tilbehør', ''], ['Synlige skader / merknader', '']]
       : [['Saksnummer', item.number], ['Dato', prettyDate(item.createdAt)], ['Tekniker', item.technician], ['Bruker', item.user], ['Klasse / rom', item.room], ['Utstyr', item.equipment], ['Serienummer / maskin-ID', item.serial], ['Utlåns-ID', item.loanId], ['Kategori', item.category], ['Prioritet', item.priority], ['Status', item.status], ['Symptom', item.symptom], ['Årsak', item.cause], ['Tiltak', item.action], ['Interne skift-notater', item.shiftNotes]];
     const lines = fields.map(([label, value]) => `<tr><td>${safe(label)}</td><td class="${receipt && !value ? 'print-lines' : ''}">${safe(value || '')}</td></tr>`).join('');
-    $('#print-area').innerHTML = `<div class="print-sheet"><h1>${receipt ? 'Utstyrsinnlevering' : 'Saksnotat'} · IKT-support</h1><div class="print-meta">${receipt ? 'Ta vare på denne kvitteringen og vis den ved henting.' : 'Skolens elevdrevne brukerstøtte'} · ${safe(item.number)}</div><table class="print-table"><tbody>${lines}</tbody></table>${receipt ? '<p class="print-note">Enheten oppbevares forsvarlig av skolens IKT-support. Kontakt IKT-pulten for spørsmål om status.</p>' : ''}<div class="print-signatures"><div>${receipt ? 'Signatur bruker' : 'Tekniker'}</div><div>${receipt ? 'Mottatt dato / signatur' : 'Dato'}</div></div></div>`;
+    $('#print-area').innerHTML = `<div class="print-sheet"><h1>${receipt ? 'Utstyrsinnlevering' : 'Saksnotat'} · IKT-support</h1><div class="print-meta">${receipt ? 'Ta vare på denne kvitteringen og vis den ved henting.' : 'Skolens elevdrevne brukerstøtte'} · ${safe(item.number)}</div><table class="print-table"><tbody>${lines}</tbody></table>${receipt ? '<p class="print-note">Enheten oppbevares forsvarlig av skolens IKT-support. Kontakt Helpnotes for spørsmål om status.</p>' : ''}<div class="print-signatures"><div>${receipt ? 'Signatur bruker' : 'Tekniker'}</div><div>${receipt ? 'Mottatt dato / signatur' : 'Dato'}</div></div></div>`;
     window.print();
   }
 
@@ -652,7 +652,7 @@
   }
 
   function exportJson() {
-    download(`ikt-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ format: 'ikt-pulten-backup', version: 2, exportedAt: new Date().toISOString(), cases }, null, 2), 'application/json');
+    download(`helpnotes-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ format: 'helpnotes-backup', version: 2, exportedAt: new Date().toISOString(), cases }, null, 2), 'application/json');
     try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (error) { /* ignorer */ }
     updateBackupStatus();
     toast('JSON-backup er lastet ned.');
