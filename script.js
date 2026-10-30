@@ -77,9 +77,9 @@
 
   const ART_ATTR = 'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
   const ART = {
-    empty: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="30" y="22" width="90" height="62" rx="8" opacity=".35"/><rect x="22" y="32" width="90" height="62" rx="8" opacity=".6"/><rect x="14" y="42" width="90" height="62" rx="8" fill="#0b1120"/><path d="M30 62h40M30 74h58M30 86h28" opacity=".7"/><circle cx="112" cy="40" r="17" fill="#0b1120" stroke="#d6c08a"/><path d="M104 40l6 6 11-12" stroke="#d6c08a"/></svg>`,
-    search: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="18" y="20" width="84" height="70" rx="8" opacity=".5"/><path d="M32 40h40M32 54h56M32 68h30" opacity=".6"/><circle cx="100" cy="62" r="22" fill="#0b1120" stroke="#d6c08a"/><path d="M92 62h16M116 78l16 16" stroke="#d6c08a"/></svg>`,
-    clear: `<svg class="clear-art" viewBox="0 0 80 80" ${ART_ATTR}><circle cx="40" cy="40" r="25" stroke="#d6c08a"/><path d="M28 41l9 9 16-18" stroke="#d6c08a"/><path d="M40 6v7M40 67v7M6 40h7M67 40h7M16 16l5 5M59 59l5 5M64 16l-5 5M21 59l-5 5" opacity=".45"/></svg>`
+    empty: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="30" y="22" width="90" height="62" rx="8" opacity=".35"/><rect x="22" y="32" width="90" height="62" rx="8" opacity=".6"/><rect x="14" y="42" width="90" height="62" rx="8" fill="#ffffff"/><path d="M30 62h40M30 74h58M30 86h28" opacity=".7"/><circle cx="112" cy="40" r="17" fill="#ffffff" stroke="#2563eb"/><path d="M104 40l6 6 11-12" stroke="#2563eb"/></svg>`,
+    search: `<svg class="empty-art" viewBox="0 0 150 110" ${ART_ATTR}><rect x="18" y="20" width="84" height="70" rx="8" opacity=".5"/><path d="M32 40h40M32 54h56M32 68h30" opacity=".6"/><circle cx="100" cy="62" r="22" fill="#ffffff" stroke="#2563eb"/><path d="M92 62h16M116 78l16 16" stroke="#2563eb"/></svg>`,
+    clear: `<svg class="clear-art" viewBox="0 0 80 80" ${ART_ATTR}><circle cx="40" cy="40" r="25" stroke="#2563eb"/><path d="M28 41l9 9 16-18" stroke="#2563eb"/><path d="M40 6v7M40 67v7M6 40h7M67 40h7M16 16l5 5M59 59l5 5M64 16l-5 5M21 59l-5 5" opacity=".45"/></svg>`
   };
 
   /* ---------- Tilstand ---------- */
@@ -435,7 +435,7 @@
     const longDate = new Intl.DateTimeFormat('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' });
     $('#ticket-chart').innerHTML =
       `<div class="chart-y">${ticks.map(t => `<span style="bottom:${yPos(t)}%">${t}</span>`).join('')}</div>` +
-      `<div class="chart-plot">${ticks.map(t => `<i class="chart-gridline" style="bottom:${yPos(t)}%"></i>`).join('')}<div class="chart-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ticket-chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7ea3ff" stop-opacity=".34"/><stop offset="100%" stop-color="#7ea3ff" stop-opacity="0"/></linearGradient></defs><path class="chart-area" d="${line} L100 ${base} L0 ${base} Z"/><path class="chart-line" d="${line}"/></svg>` +
+      `<div class="chart-plot">${ticks.map(t => `<i class="chart-gridline" style="bottom:${yPos(t)}%"></i>`).join('')}<div class="chart-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ticket-chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2563eb" stop-opacity=".34"/><stop offset="100%" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs><path class="chart-area" d="${line} L100 ${base} L0 ${base} Z"/><path class="chart-line" d="${line}"/></svg>` +
       `${points.map(p => `<span class="chart-dot" style="left:${p.x}%;top:${100 - p.y}%" title="${safe(longDate.format(p.day))}: ${p.count} ${p.count === 1 ? 'sak' : 'saker'}"></span>`).join('')}</div>${total === 0 ? '<div class="chart-empty">Ingen saker de siste 7 dagene</div>' : ''}</div>` +
       `<div></div><div class="chart-x">${points.map((p, i) => `<span style="left:${p.x}%">${safe(weekday.format(days[i]).replace('.', ''))}</span>`).join('')}</div>`;
     $('#chart-week-total').textContent = `${total} ${total === 1 ? 'sak' : 'saker'}`;
