@@ -9,13 +9,14 @@
   <meta name="application-name" content="Helpnotes">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Helpnotes · Elevdrevet IKT-support">
-  <meta property="og:description" content="Logg, følg opp og del supportsaker raskt. Fungerer uten nett og kan synkroniseres med Supabase.">
+  <meta property="og:description" content="Logg, følg opp og del supportsaker raskt. Lagres lokalt og kan synkroniseres med Supabase.">
   <meta name="twitter:card" content="summary">
   <meta name="description" content="Saksnotater og oversikt for elevteknikernes IKT-support.">
   <title>Helpnotes · Oversikt</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23273247'/%3E%3Cpath d='M20 44l16-16m-2-10a10 10 0 0 0 11 14l-3 3 6 6-5 5-6-6-3 3A10 10 0 0 1 20 22l6 6 5-5z' fill='none' stroke='%239db7ff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="preload" href="fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="fonts/playfair-display-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
   <script>
     /* Hindrer at appen blinker fram før passordveggen: lås som standard, auth.js låser opp hvis du allerede er logget inn */
@@ -99,16 +100,16 @@
         </a>
       </div>
       <div class="sb-group">
-        <button type="button" class="sb-option active" data-view="dashboard" aria-current="page" title="Oversikt"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg></span><span class="sb-label">Oversikt</span></button>
-        <button type="button" class="sb-option" data-view="log" title="Sakslogg"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox"/></svg></span><span class="sb-label">Sakslogg</span><span id="nav-count" class="sb-badge"></span></button>
-        <button type="button" class="sb-option" data-view="new" title="Ny sak"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span><span class="sb-label">Ny sak</span><kbd class="sb-label">N</kbd></button>
+        <button type="button" class="sb-option active" data-view="dashboard" aria-current="page" aria-label="Oversikt" title="Oversikt"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg></span><span class="sb-label">Oversikt</span></button>
+        <button type="button" class="sb-option" data-view="log" aria-label="Sakslogg" title="Sakslogg"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-inbox"/></svg></span><span class="sb-label">Sakslogg</span><span id="nav-count" class="sb-badge"></span></button>
+        <button type="button" class="sb-option" data-view="new" aria-label="Ny sak" title="Ny sak"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span><span class="sb-label">Ny sak</span><kbd class="sb-label">N</kbd></button>
       </div>
       <div class="sb-group sb-account">
         <div class="sb-heading sb-label">Konto</div>
         <button type="button" class="sb-option" data-cloud-sync data-cloud-state="off" title="Synkroniser sakslogg med Supabase"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-cloud"/></svg></span><span class="sb-label">Sakslogg</span><span class="sb-status sb-label"><span class="cloud-dot" aria-hidden="true"></span><small data-cloud-label>…</small></span></button>
-        <button type="button" class="sb-option" data-lock title="Lås systemet"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span><span class="sb-label">Lås systemet</span></button>
+        <button type="button" class="sb-option" data-lock aria-label="Lås systemet" title="Lås systemet"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span><span class="sb-label">Lås systemet</span></button>
       </div>
-      <button type="button" id="sidebar-toggle" class="sb-toggle" aria-expanded="true" aria-controls="sidebar" title="Skjul/vis sidemeny"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-chevrons-right"/></svg></span><span class="sb-label">Skjul</span></button>
+      <button type="button" id="sidebar-toggle" class="sb-toggle" aria-expanded="true" aria-controls="sidebar" aria-label="Skjul eller vis sidemeny" title="Skjul/vis sidemeny"><span class="sb-icon"><svg class="icon" aria-hidden="true"><use href="#i-chevrons-right"/></svg></span><span class="sb-label">Skjul</span></button>
     </nav>
 
     <div class="main">

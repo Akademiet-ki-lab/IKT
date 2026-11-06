@@ -432,6 +432,7 @@
       return `<div class="bar-col${i === 6 ? ' is-today' : ''}${n === max && n > 0 ? ' is-peak' : ''}" title="${safe(label)}"><span class="bar-value">${n}</span><div class="bar-track"><div class="bar-fill" style="height:${height}%"></div></div><span class="bar-day">${safe(weekday.format(day).replace('.', ''))}</span></div>`;
     }).join('') + (total === 0 ? '<div class="chart-empty">Ingen saker de siste 7 dagene</div>' : '');
     $('#chart-week-total').textContent = `${total} ${total === 1 ? 'sak' : 'saker'}`;
+    $('#ticket-chart').setAttribute('aria-label', `Saker registrert per dag de siste sju dagene: ${days.map((day, i) => `${longDate.format(day)} ${counts[i]}`).join(', ')}`);
   }
 
   function renderDashboard() {
@@ -462,6 +463,8 @@
     $('#resolution-rate').textContent = `${rate}%`;
     $('#resolution-progress').style.setProperty('--p', rate);
     $('#hero-meter-fill').style.width = `${rate}%`;
+    $('#resolution-progress').setAttribute('aria-label', `Løsningsgrad: ${rate} prosent løst`);
+    $('.hero-meter').setAttribute('aria-label', total ? `Andel løste saker: ${rate} prosent, ${solved} av ${total}` : 'Ingen saker ennå');
     $('#hero-meter-text').textContent = total ? `${rate} % løst · ${solved} av ${total}` : 'Ingen saker ennå';
     $('#goal-gap').textContent = !total ? 'Mål 90 %' : rate >= 90 ? 'Målet er nådd' : `${90 - rate} % til målet`;
     renderTicketChart();
