@@ -251,8 +251,10 @@
               </section>
 
               <section class="card composer-card step-card">
-                <h3 class="section-title"><span class="step-dot">2</span><span>Hvem trenger hjelp?<small>Skriv navnet på eleven eller læreren</small></span></h3>
-                <div class="field"><label class="sr-only" for="user">Navn</label><input id="user" name="user" class="input input-big" maxlength="100" placeholder="F.eks. Mia Hansen" list="user-suggestions"></div>
+                <h3 class="section-title"><span class="step-dot">2</span><span>Hvem trenger hjelp?<small>Ikke skriv navn. Velg elev eller lærer</small></span></h3>
+                <div class="field"><span class="sr-only" id="role-label">Elev eller lærer</span><div id="role-seg" class="choice-grid choice-grid-2" role="radiogroup" aria-labelledby="role-label"></div></div>
+                <div class="field" id="class-field"><label for="student-class" class="field-title">Klasse<small>F.eks. 2IMB</small></label><input id="student-class" name="room" class="input input-big" maxlength="20" autocapitalize="characters" placeholder="Skriv klassen til eleven" list="class-suggestions"></div>
+                <div class="field"><label for="who-input" class="field-title" id="who-label">Elev<small>Settes automatisk, men du kan endre</small></label><input id="who-input" name="who" class="input input-big" maxlength="20" placeholder="Automatisk"><p id="who-hint" class="draft-status" aria-live="polite"></p></div>
               </section>
 
               <section class="card composer-card step-card step-wide">
@@ -283,7 +285,7 @@
                 <button type="submit" id="submit-new" class="btn btn-secondary" data-after="new"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Lagre og ny</button>
               </div>
             </div>
-            <datalist id="user-suggestions"></datalist>
+            <datalist id="class-suggestions"></datalist>
           </form>
         </section>
 

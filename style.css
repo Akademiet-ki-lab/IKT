@@ -910,3 +910,6 @@ body[data-page=dashboard]{background:var(--bg)}
 .hero-meter span{white-space:nowrap}
 @media(max-width:640px){.hero-meter-track{flex:1;min-width:48px;width:auto}}
 @media(max-width:380px){.hero-meter{gap:10px;font-size:12px}}
+
+/* ---------- Elev / lærer-valg (anonymisert) ---------- */
+.choice-grid.choice-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}

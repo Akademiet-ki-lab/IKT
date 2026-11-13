@@ -43,6 +43,11 @@
     attach() {}, requestSync() {}, syncNow: async () => ({ ok: false }), refreshStatus() {}, onStatus(fn) { fn({ state: 'off', label: 'Kun lokalt', detail: '' }); }, validateConfig: () => ({ ok: false, message: '' })
   };
 
+  /* Anonymisering: personer lagres som «Elev 3» (nummerert per klasse) eller «Lærer 2» */
+  const ANON_RE = /^(Elev|Lærer) \d+$/;
+  const normClass = value => text(value).replace(/\s+/g, '').toLocaleUpperCase('nb');
+  const whoLabel = c => c.user ? (c.room ? `${c.user} (${c.room})` : c.user) : 'Ukjent bruker';
+
   const initial = name => (text(name).trim()[0] || '?').toLocaleUpperCase('nb');
   const avatar = (name, small = false) => `<span class="avatar"${small ? ' style="width:30px;height:30px;font-size:17px"' : ''} title="${safe(name || 'Ukjent tekniker')}">${safe(initial(name))}</span>`;
 
@@ -95,6 +100,8 @@
   let draftTimer = 0;
   let searchTimer = 0;
   let keepTechOnEnter = false;
+  let whoManual = false; // true når brukeren selv har skrevet nummeret
+  let legacyUser = ''; // gammelt navn på en sak som ble lagret før anonymisering
   let localAvailable = true;
   const filters = { query: '', status: '', tech: '', category: '' };
 
@@ -229,7 +236,7 @@
     renderSidebar();
     window.scrollTo(0, 0);
     if (!moveFocus) return;
-    if (view === 'new' && window.matchMedia('(pointer:fine)').matches) $('#user').focus({ preventScroll: true });
+    if (view === 'new' && window.matchMedia('(pointer:fine)').matches) $(currentRole() === 'teacher' ? '#who-input' : '#student-class').focus({ preventScroll: true });
     else $(`#view-${view} [data-view-heading]`)?.focus({ preventScroll: true });
   }
 
@@ -241,6 +248,7 @@
     $('#category-chips').innerHTML = CATEGORIES.map(c => choice('category', c, 'blue', CATEGORY_INFO[c] || ['info', c, ''])).join('');
     $('#status-seg').innerHTML = STATUS_META.map(([value, , tone]) => choice('status', value, tone, STATUS_INFO[tone])).join('');
     $('#filter-category').innerHTML = '<option value="">Alle kategorier</option>' + CATEGORIES.map(c => `<option>${safe(c)}</option>`).join('');
+    $('#role-seg').innerHTML = choice('role', 'student', 'blue', ['layers', 'Elev', 'Velg klasse og nummer']) + choice('role', 'teacher', 'blue', ['file-text', 'Lærer', 'Uten klasse']);
     $('#technician').innerHTML = `<option value="">Velg tekniker</option>${TECHNICIANS.map(n => `<option value="${safe(n)}">${safe(n)}</option>`).join('')}<option value="__other">Annen tekniker …</option>`;
   }
 
@@ -249,9 +257,55 @@
   function techValue() { const v = $('#technician').value; return v === '__other' ? $('#technician-other').value.trim() : v; }
   function syncTechnicianOther() { const other = $('#technician').value === '__other'; $('#technician-other').classList.toggle('hidden', !other); }
 
+  const currentRole = () => radioValue('role') === 'teacher' ? 'teacher' : 'student';
+  const rolePrefix = role => role === 'teacher' ? 'Lærer' : 'Elev';
+  const keepsLegacy = () => !!legacyUser && $('#who-input').value.trim() === legacyUser;
+  function classValue() { const raw = $('#student-class').value; return currentRole() === 'teacher' ? '' : keepsLegacy() ? raw.trim() : normClass(raw); }
+
+  // Nummer som allerede er i bruk: per klasse for elever, felles for lærere
+  function usedNumbers(role, room) {
+    const re = new RegExp(`^${rolePrefix(role)} (\\d+)$`);
+    const nums = new Set();
+    cases.forEach(c => {
+      const m = text(c.user).trim().match(re);
+      if (m && (role === 'teacher' || normClass(c.room) === room)) nums.add(Number(m[1]));
+    });
+    return [...nums].sort((a, b) => a - b);
+  }
+  const nextLabel = (role, room) => `${rolePrefix(role)} ${(usedNumbers(role, room).pop() || 0) + 1}`;
+
+  // «3», «elev 3» og «Elev 3» blir alle til «Elev 3»
+  function parseWho(raw, role) {
+    const m = text(raw).trim().match(/^(?:elev|lærer)?\s*(\d{1,4})$/i);
+    return m && Number(m[1]) >= 1 ? `${rolePrefix(role)} ${Number(m[1])}` : '';
+  }
+
+  function whoValue() {
+    const role = currentRole(), room = normClass($('#student-class').value), raw = $('#who-input').value.trim();
+    if (keepsLegacy()) return legacyUser;
+    if (role === 'student' && !room) return '';
+    return parseWho(raw, role) || (raw ? '' : nextLabel(role, room));
+  }
+
+  // Fyller inn neste ledige nummer automatisk, med mindre brukeren har skrevet et eget
+  function refreshWho() {
+    const role = currentRole(), student = role === 'student', input = $('#who-input'), hint = $('#who-hint');
+    const room = normClass($('#student-class').value);
+    $('#class-field').classList.toggle('hidden', !student);
+    $('#who-label').firstChild.textContent = rolePrefix(role);
+    const blocked = student && !room && !keepsLegacy();
+    input.disabled = blocked;
+    input.placeholder = blocked ? 'Skriv klassen først' : 'Automatisk';
+    if (blocked) { input.value = ''; whoManual = false; hint.textContent = ''; return; }
+    if (!whoManual && !keepsLegacy()) input.value = nextLabel(role, room);
+    const value = keepsLegacy() ? '' : parseWho(input.value, role);
+    const used = value && usedNumbers(role, room).some(n => `${rolePrefix(role)} ${n}` === value);
+    hint.textContent = !value ? '' : used ? `${value} finnes allerede${student ? ` i ${room}` : ''}. Saken knyttes til samme ${student ? 'elev' : 'lærer'}.` : `Ny ${student ? 'elev' : 'lærer'}${student ? ` i ${room}` : ''}.`;
+  }
+
   function formValues() {
     return {
-      technician: techValue(), number: $('#case-number').value.trim(), user: $('#user').value.trim(),
+      technician: techValue(), number: $('#case-number').value.trim(), user: whoValue(), room: classValue(),
       category: radioValue('category'), symptom: $('#symptom').value.trim(), action: $('#action').value.trim(), cause: $('#cause').value.trim(),
       status: radioValue('status')
     };
@@ -263,20 +317,32 @@
     else if (tech) { $('#technician').value = '__other'; $('#technician-other').value = tech; }
     else $('#technician').value = '';
     syncTechnicianOther();
-    $('#case-number').value = text(v.number); $('#user').value = text(v.user);
+    $('#case-number').value = text(v.number);
+    const user = text(v.user).trim();
+    legacyUser = user && !ANON_RE.test(user) ? user : '';
+    const role = /^Lærer \d+$/.test(user) ? 'teacher' : 'student';
+    setRadio('role', role);
+    $('#student-class').value = role === 'student' ? text(v.room) : '';
+    const roomNow = role === 'student' ? normClass(v.room) : '';
+    $('#who-input').value = user;
+    whoManual = !!editingId || !!legacyUser || user !== nextLabel(role, roomNow);
+    refreshWho();
     $('#symptom').value = text(v.symptom); $('#action').value = text(v.action); $('#cause').value = text(v.cause);
     setRadio('category', text(v.category)); setRadio('status', text(v.status));
   }
 
-  function missingFields(values = formValues()) { return REQUIRED.filter(([key]) => !values[key]); }
-  function fieldWrapper(key) { return ({ technician: '#technician', user: '#user', category: '#category-chips', symptom: '#symptom', status: '#status-seg' })[key]; }
+  const ALL_FIELDS = [...REQUIRED, ['room', 'Klasse']];
+  function missingFields(values = formValues()) {
+    return REQUIRED.filter(([key]) => !values[key]).map(m => m[0] === 'user' && currentRole() === 'student' && !values.room ? ['room', 'Klasse'] : m);
+  }
+  function fieldWrapper(key) { return ({ technician: '#technician', user: '#who-input', room: '#student-class', category: '#category-chips', symptom: '#symptom', status: '#status-seg' })[key]; }
 
   function updateFormStatus(markMissing = false) {
     const missing = missingFields();
     const el = $('#form-missing');
     el.textContent = missing.length ? `Mangler: ${missing.map(m => m[1]).join(', ')}` : 'Klar til å lagre';
     el.classList.toggle('is-ready', missing.length === 0);
-    REQUIRED.forEach(([key]) => {
+    ALL_FIELDS.forEach(([key]) => {
       const wrapper = $(fieldWrapper(key))?.closest('.field');
       if (!wrapper) return;
       const isMissing = missing.some(m => m[0] === key);
@@ -287,7 +353,7 @@
   function saveDraft() {
     if (editingId) return;
     const v = formValues();
-    const hasContent = ['user', 'symptom', 'action', 'cause', 'category', 'status'].some(k => v[k]);
+    const hasContent = ['user', 'room', 'symptom', 'action', 'cause', 'category', 'status'].some(k => v[k]);
     if (!hasContent) { try { localStorage.removeItem(DRAFT_KEY); } catch (error) { /* ignorer */ } $('#draft-status').textContent = ''; return; }
     if (writeJson(DRAFT_KEY, v)) $('#draft-status').textContent = `Utkast lagret kl. ${new Date().toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}`;
   }
@@ -317,6 +383,10 @@
     editingId = null;
     $('#case-form').reset();
     $('#technician-other').value = '';
+    legacyUser = '';
+    setRadio('role', 'student');
+    whoManual = false;
+    refreshWho();
     $('#case-number').value = nextNumber();
     let last = ''; try { last = localStorage.getItem(LAST_TECH_KEY) || ''; } catch (error) { /* ignorer */ }
     if (TECHNICIANS.includes(last)) $('#technician').value = last;
@@ -384,7 +454,7 @@
     const wasEditing = !!editingId;
     resetForm();
     refreshAll();
-    if (after === 'new' && !wasEditing) { $('#user').focus(); window.scrollTo(0, 0); return; }
+    if (after === 'new' && !wasEditing) { $(currentRole() === 'teacher' ? '#who-input' : '#student-class').focus(); window.scrollTo(0, 0); return; }
     openCaseId = savedId;
     navigate('log');
   }
@@ -477,7 +547,7 @@
     const attention = cases.filter(c => c.status !== STATUS.SOLVED)
       .sort((a, b) => (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0) || new Date(a.updatedAt) - new Date(b.updatedAt)).slice(0, 5);
     $('#attention-list').innerHTML = attention.length
-      ? attention.map(c => `<button type="button" class="attention-row" data-open-id="${safe(c.id)}">${avatar(c.technician)}<span class="attention-main"><strong>${safe(c.user || 'Ukjent bruker')}</strong><span>${safe(c.number)} · ${safe(c.symptom || c.category)}</span></span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="attention-age">${safe(ageText(c.updatedAt))}</span><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></button>`).join('')
+      ? attention.map(c => `<button type="button" class="attention-row" data-open-id="${safe(c.id)}">${avatar(c.technician)}<span class="attention-main"><strong>${safe(whoLabel(c))}</strong><span>${safe(c.number)} · ${safe(c.symptom || c.category)}</span></span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="attention-age">${safe(ageText(c.updatedAt))}</span><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></button>`).join('')
       : `<div class="attention-clear">${ART.clear}<div><h3>${total ? 'Alt er fulgt opp' : 'Her er det rolig'}</h3><p>${total ? 'Ingen saker venter eller er eskalert akkurat nå.' : 'Når du logger en sak, dukker den opp her så lenge den ikke er løst.'}</p></div></div>`;
 
     const rows = TECHNICIANS.map(name => { const own = cases.filter(c => c.technician === name); return { name, total: own.length, solved: own.filter(c => c.status === STATUS.SOLVED).length }; });
@@ -527,7 +597,7 @@
   }
 
   function rowMarkup(c) {
-    return `<button type="button" class="case-row tone-${statusTone(c.status)}${openCaseId === c.id ? ' is-selected' : ''}" data-open-id="${safe(c.id)}" aria-label="Åpne sak ${safe(c.number)}">${avatar(c.technician)}<span class="case-body"><span class="case-top"><strong>${safe(c.user || 'Ukjent bruker')}</strong><span class="case-number">${safe(c.number)}</span><time class="case-time" datetime="${safe(c.updatedAt)}">${safe(shortTime(c.updatedAt))}</time></span><span class="case-snippet">${safe(c.symptom || 'Ingen beskrivelse registrert')}</span><span class="case-tags"><span class="tag">${safe(c.category)}</span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="case-by">${safe(c.technician || '—')}</span></span></span><span class="case-side"><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></span></button>`;
+    return `<button type="button" class="case-row tone-${statusTone(c.status)}${openCaseId === c.id ? ' is-selected' : ''}" data-open-id="${safe(c.id)}" aria-label="Åpne sak ${safe(c.number)}">${avatar(c.technician)}<span class="case-body"><span class="case-top"><strong>${safe(whoLabel(c))}</strong><span class="case-number">${safe(c.number)}</span><time class="case-time" datetime="${safe(c.updatedAt)}">${safe(shortTime(c.updatedAt))}</time></span><span class="case-snippet">${safe(c.symptom || 'Ingen beskrivelse registrert')}</span><span class="case-tags"><span class="tag">${safe(c.category)}</span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span><span class="case-by">${safe(c.technician || '—')}</span></span></span><span class="case-side"><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></span></button>`;
   }
 
   function listMarkup(items) {
@@ -536,12 +606,12 @@
   }
 
   function cardsMarkup(items) {
-    return `<div class="case-grid">${items.map(c => `<button type="button" class="case-card${openCaseId === c.id ? ' is-selected' : ''}" data-open-id="${safe(c.id)}" aria-label="Åpne sak ${safe(c.number)}"><span class="case-card-top"><span class="case-number">${safe(c.number)}</span><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></span><h4>${safe(c.user || 'Ukjent bruker')}</h4><span class="case-snippet">${safe(c.symptom || 'Ingen beskrivelse registrert')}</span><span class="case-card-foot"><span class="case-tags"><span class="tag">${safe(c.category)}</span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span></span>${avatar(c.technician, true)}</span></button>`).join('')}</div>`;
+    return `<div class="case-grid">${items.map(c => `<button type="button" class="case-card${openCaseId === c.id ? ' is-selected' : ''}" data-open-id="${safe(c.id)}" aria-label="Åpne sak ${safe(c.number)}"><span class="case-card-top"><span class="case-number">${safe(c.number)}</span><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></span><h4>${safe(whoLabel(c))}</h4><span class="case-snippet">${safe(c.symptom || 'Ingen beskrivelse registrert')}</span><span class="case-card-foot"><span class="case-tags"><span class="tag">${safe(c.category)}</span><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span></span>${avatar(c.technician, true)}</span></button>`).join('')}</div>`;
   }
 
   function tableMarkup(items) {
     const head = ['Saksnr.', 'Bruker', 'Problem', 'Kategori', 'Prioritet', 'Status', 'Tekniker', 'Oppdatert'];
-    return `<div class="table-wrap"><table class="case-table"><thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${items.map(c => `<tr class="${openCaseId === c.id ? 'is-selected' : ''}" data-open-id="${safe(c.id)}" tabindex="0" aria-label="Åpne sak ${safe(c.number)}"><td class="mono">${safe(c.number)}</td><td><strong>${safe(c.user || '—')}</strong></td><td class="cell-wrap">${safe(c.symptom)}</td><td>${safe(c.category)}</td><td><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span></td><td><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></td><td>${safe(c.technician || '—')}</td><td>${safe(shortTime(c.updatedAt))}</td></tr>`).join('')}</tbody></table></div>`;
+    return `<div class="table-wrap"><table class="case-table"><thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${items.map(c => `<tr class="${openCaseId === c.id ? 'is-selected' : ''}" data-open-id="${safe(c.id)}" tabindex="0" aria-label="Åpne sak ${safe(c.number)}"><td class="mono">${safe(c.number)}</td><td><strong>${safe(c.user ? whoLabel(c) : '—')}</strong></td><td class="cell-wrap">${safe(c.symptom)}</td><td>${safe(c.category)}</td><td><span class="prio prio-${priorityTone(c.priority)}">${safe(c.priority)}</span></td><td><span class="status-pill ${statusClass(c.status)}">${safe(shortStatus(c.status))}</span></td><td>${safe(c.technician || '—')}</td><td>${safe(shortTime(c.updatedAt))}</td></tr>`).join('')}</tbody></table></div>`;
   }
 
   function renderLog() {
@@ -579,12 +649,12 @@
     }
     const scroll = pane.scrollTop;
     pane.hidden = false; layout.classList.add('has-detail'); document.body.classList.add('has-detail');
-    pane.innerHTML = `<div class="detail-head">${avatar(item.technician)}<div class="detail-title"><span class="case-number">${safe(item.number)}</span><h3>${safe(item.user || 'Ukjent bruker')}</h3><span>${safe(item.technician || 'Ingen tekniker')} · ${safe(prettyDate(item.createdAt))}</span></div><button type="button" class="icon-btn" data-action="close-detail" aria-label="Lukk detaljer">${icon('x')}</button></div>
+    pane.innerHTML = `<div class="detail-head">${avatar(item.technician)}<div class="detail-title"><span class="case-number">${safe(item.number)}</span><h3>${safe(whoLabel(item))}</h3><span>${safe(item.technician || 'Ingen tekniker')} · ${safe(prettyDate(item.createdAt))}</span></div><button type="button" class="icon-btn" data-action="close-detail" aria-label="Lukk detaljer">${icon('x')}</button></div>
     <div class="detail-body">
       <div class="segmented detail-status" role="group" aria-label="Endre status">${STATUS_META.map(([value, label, tone]) => `<button type="button" data-status-set="${safe(value)}" data-tone="${tone}" aria-pressed="${item.status === value}" title="${safe(value)}">${label}</button>`).join('')}</div>
       <div class="detail-chips"><span class="tag">${safe(item.category)}</span><span class="prio prio-${priorityTone(item.priority)}">${safe(item.priority)} prioritet</span><span class="muted">Oppdatert ${safe(prettyDate(item.updatedAt))}</span></div>
       <section class="detail-section"><h4>Problem og løsning</h4><div class="detail-list">${detailItem('Symptom', item.symptom)}${detailItem('Årsak', item.cause)}${detailItem('Tiltak', item.action)}</div></section>
-      <section class="detail-section"><h4>Bruker og utstyr</h4><div class="detail-list"><div class="detail-two">${detailItem('Bruker', item.user)}${detailItem('Klasse / rom', item.room)}</div><div class="detail-two">${detailItem('Utstyr', item.equipment)}${detailItem('Serienummer', item.serial)}</div>${detailItem('Utlåns-ID', item.loanId)}</div></section>
+      <section class="detail-section"><h4>Hvem og utstyr</h4><div class="detail-list"><div class="detail-two">${detailItem('Elev / lærer', item.user)}${detailItem('Klasse / rom', item.room)}</div><div class="detail-two">${detailItem('Utstyr', item.equipment)}${detailItem('Serienummer', item.serial)}</div>${detailItem('Utlåns-ID', item.loanId)}</div></section>
       <section class="detail-section"><h4>Internt notat</h4><div class="detail-list">${detailItem('Beskjed til neste tekniker', item.shiftNotes)}</div></section>
       <div class="detail-actions"><button type="button" class="btn btn-primary" data-action="edit" data-id="${safe(item.id)}">${icon('pen')}Rediger sak</button><button type="button" class="btn btn-secondary btn-sm" data-action="print" data-id="${safe(item.id)}">${icon('printer')}Saksnotat</button><button type="button" class="btn btn-secondary btn-sm" data-action="receipt" data-id="${safe(item.id)}">${icon('file-text')}Kvittering</button><button type="button" class="btn btn-danger btn-sm" data-action="delete" data-id="${safe(item.id)}">${icon('trash')}Slett</button></div>
     </div>`;
@@ -617,7 +687,8 @@
   function updateSuggestions() {
     const uniq = key => [...new Set(cases.map(c => c[key]).filter(Boolean))].slice(0, 60);
     const fill = (id, values) => { $(id).innerHTML = values.map(v => `<option value="${safe(v)}"></option>`).join(''); };
-    fill('#user-suggestions', uniq('user'));
+    fill('#class-suggestions', [...new Set(cases.filter(c => ANON_RE.test(text(c.user).trim()) && c.room).map(c => normClass(c.room)))].sort().slice(0, 60));
+    refreshWho();
   }
 
   function refreshAll() {
@@ -631,8 +702,8 @@
   function printCase(item, receipt = false) {
     if (!item) return;
     const fields = receipt
-      ? [['Mottatt tidspunkt', prettyDate(new Date().toISOString())], ['Saksnummer', item.number], ['Elev / innlevert av', item.user], ['Klasse / rom', item.room], ['Utstyr', item.equipment], ['Serienummer / maskin-ID', item.serial], ['Utlåns-ID', item.loanId], ['Mottakende tekniker', item.technician], ['Medfølgende tilbehør', ''], ['Synlige skader / merknader', '']]
-      : [['Saksnummer', item.number], ['Dato', prettyDate(item.createdAt)], ['Tekniker', item.technician], ['Bruker', item.user], ['Klasse / rom', item.room], ['Utstyr', item.equipment], ['Serienummer / maskin-ID', item.serial], ['Utlåns-ID', item.loanId], ['Kategori', item.category], ['Prioritet', item.priority], ['Status', item.status], ['Symptom', item.symptom], ['Årsak', item.cause], ['Tiltak', item.action], ['Interne skift-notater', item.shiftNotes]];
+      ? [['Mottatt tidspunkt', prettyDate(new Date().toISOString())], ['Saksnummer', item.number], ['Elev / innlevert av', item.user], ['Klasse', item.room], ['Utstyr', item.equipment], ['Serienummer / maskin-ID', item.serial], ['Utlåns-ID', item.loanId], ['Mottakende tekniker', item.technician], ['Medfølgende tilbehør', ''], ['Synlige skader / merknader', '']]
+      : [['Saksnummer', item.number], ['Dato', prettyDate(item.createdAt)], ['Tekniker', item.technician], ['Elev / lærer', item.user], ['Klasse', item.room], ['Utstyr', item.equipment], ['Serienummer / maskin-ID', item.serial], ['Utlåns-ID', item.loanId], ['Kategori', item.category], ['Prioritet', item.priority], ['Status', item.status], ['Symptom', item.symptom], ['Årsak', item.cause], ['Tiltak', item.action], ['Interne skift-notater', item.shiftNotes]];
     const lines = fields.map(([label, value]) => `<tr><td>${safe(label)}</td><td class="${receipt && !value ? 'print-lines' : ''}">${safe(value || '')}</td></tr>`).join('');
     $('#print-area').innerHTML = `<div class="print-sheet"><h1>${receipt ? 'Utstyrsinnlevering' : 'Saksnotat'} · IKT-support</h1><div class="print-meta">${receipt ? 'Ta vare på denne kvitteringen og vis den ved henting.' : 'Skolens elevdrevne brukerstøtte'} · ${safe(item.number)}</div><table class="print-table"><tbody>${lines}</tbody></table>${receipt ? '<p class="print-note">Enheten oppbevares forsvarlig av skolens IKT-support. Kontakt Helpnotes for spørsmål om status.</p>' : ''}<div class="print-signatures"><div>${receipt ? 'Signatur bruker' : 'Tekniker'}</div><div>${receipt ? 'Mottatt dato / signatur' : 'Dato'}</div></div></div>`;
     window.print();
@@ -645,7 +716,7 @@
   }
 
   function exportCsv() {
-    const columns = [['number', 'Saksnummer'], ['createdAt', 'Opprettet'], ['updatedAt', 'Sist oppdatert'], ['technician', 'Tekniker'], ['user', 'Bruker'], ['room', 'Klasse/rom'], ['equipment', 'Utstyr'], ['serial', 'Serienummer'], ['loanId', 'Utlåns-ID'], ['category', 'Kategori'], ['priority', 'Prioritet'], ['symptom', 'Symptom'], ['cause', 'Årsak'], ['action', 'Tiltak'], ['shiftNotes', 'Interne skift-notater'], ['status', 'Status']];
+    const columns = [['number', 'Saksnummer'], ['createdAt', 'Opprettet'], ['updatedAt', 'Sist oppdatert'], ['technician', 'Tekniker'], ['user', 'Elev/lærer'], ['room', 'Klasse/rom'], ['equipment', 'Utstyr'], ['serial', 'Serienummer'], ['loanId', 'Utlåns-ID'], ['category', 'Kategori'], ['priority', 'Prioritet'], ['symptom', 'Symptom'], ['cause', 'Årsak'], ['action', 'Tiltak'], ['shiftNotes', 'Interne skift-notater'], ['status', 'Status']];
     const quote = value => { const raw = text(value); return `"${(/^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw).replace(/"/g, '""')}"`; };
     const csv = '\ufeff' + [columns.map(([, l]) => quote(l)).join(';'), ...cases.map(item => columns.map(([k]) => quote(item[k])).join(';'))].join('\r\n');
     download(`ikt-saker-${new Date().toISOString().slice(0, 10)}.csv`, csv, 'text/csv;charset=utf-8');
@@ -712,6 +783,16 @@
   form.addEventListener('submit', submitCase);
   form.addEventListener('input', () => { formDirty = true; scheduleDraft(); updateFormStatus(); });
   form.addEventListener('change', () => { formDirty = true; scheduleDraft(); updateFormStatus(); });
+  $('#role-seg').addEventListener('change', () => { whoManual = false; refreshWho(); });
+  $('#student-class').addEventListener('input', () => { whoManual = false; refreshWho(); });
+  $('#student-class').addEventListener('change', event => { if (!keepsLegacy()) event.target.value = normClass(event.target.value); refreshWho(); });
+  $('#who-input').addEventListener('input', () => { whoManual = true; refreshWho(); });
+  $('#who-input').addEventListener('change', event => {
+    if (keepsLegacy()) return;
+    const value = parseWho(event.target.value, currentRole());
+    if (value) event.target.value = value; else whoManual = false;
+    refreshWho();
+  });
   $('#technician').addEventListener('change', () => { syncTechnicianOther(); if ($('#technician').value === '__other') $('#technician-other').focus(); });
   $('#case-number').addEventListener('input', event => event.target.closest('.field').classList.remove('is-missing'));
   $('#cancel-edit').addEventListener('click', () => { resetForm(); navigate('log'); });
