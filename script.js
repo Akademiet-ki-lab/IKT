@@ -5,7 +5,6 @@
   const STORAGE_KEY = 'ikt_school_tickets_v2';
   const DELETIONS_KEY = 'ikt_pending_deletions';
   const DRAFT_KEY = 'ikt_case_draft';
-  const LAST_TECH_KEY = 'ikt_last_technician';
   const BACKUP_KEY = 'ikt_last_backup';
   const LEGACY_KEY = 'ikt-pulten-cases-v1';
   const TECHNICIANS = ['Aksel', 'Wajid', 'Qasim'];
@@ -388,8 +387,7 @@
     whoManual = false;
     refreshWho();
     $('#case-number').value = nextNumber();
-    let last = ''; try { last = localStorage.getItem(LAST_TECH_KEY) || ''; } catch (error) { /* ignorer */ }
-    if (TECHNICIANS.includes(last)) $('#technician').value = last;
+    $('#technician').value = '';
     syncTechnicianOther();
     $$('.is-missing').forEach(el => el.classList.remove('is-missing'));
     setFormMode(false);
@@ -450,7 +448,6 @@
       if (!persist([...cases, { id: savedId, priority: 'Middels', ...values, createdAt: now, updatedAt: now }])) return;
       toast(`Sak ${values.number} er lagret.`);
     }
-    try { localStorage.setItem(LAST_TECH_KEY, values.technician); } catch (error) { /* ignorer */ }
     const wasEditing = !!editingId;
     resetForm();
     refreshAll();
